@@ -65,6 +65,9 @@ export default function HomePage() {
                 className="object-contain"
               />
             </div>
+            <p className="text-gray-500 text-sm tracking-wider text-center">
+              Let&apos;s find your match.
+            </p>
           </div>
 
           {/* 输入框区域 */}
@@ -73,7 +76,7 @@ export default function HomePage() {
               <textarea
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
-                placeholder="Ask Anything..."
+                placeholder="How can I help you Boss?"
                 className="w-full px-4 sm:px-6 pt-4 sm:pt-5 pb-14 sm:pb-16 bg-transparent outline-none resize-none text-gray-700 placeholder-gray-400 text-base"
                 rows={isMobile ? 1 : 2}
               />
