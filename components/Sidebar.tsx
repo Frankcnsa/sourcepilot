@@ -61,9 +61,9 @@ export default function Sidebar({ isOpen, onClose, isMobile }: SidebarProps) {
       <div
         className={`${
           isOpen 
-            ? 'translate-x-0 opacity-100' 
-            : '-translate-x-full opacity-0 pointer-events-none'
-        } fixed md:relative z-50 h-full bg-[#f9f9f9] flex flex-col transition-all duration-300 ease-in-out md:opacity-100 md:translate-x-0 md:pointer-events-auto`}
+            ? 'translate-x-0 visible' 
+            : '-translate-x-full invisible'
+        } fixed md:relative z-50 h-full bg-[#f9f9f9] flex flex-col transition-transform duration-300 ease-in-out md:visible md:translate-x-0`}
         style={{ width: isMobile ? '85%' : '260px' }}
       >
       {/* 顶部区域 */}
