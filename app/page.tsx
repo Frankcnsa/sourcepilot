@@ -14,12 +14,15 @@ export default function HomePage() {
     const checkMobile = () => {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
-      if (!mobile) {
-        setSidebarOpen(true);
-      }
     };
     
     checkMobile();
+    
+    // 初始化时，PC端自动打开侧边栏
+    if (window.innerWidth >= 768) {
+      setSidebarOpen(true);
+    }
+    
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
