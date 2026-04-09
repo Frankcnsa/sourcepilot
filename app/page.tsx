@@ -23,6 +23,7 @@ export default function HomePage() {
     if (window.innerWidth >= 768) {
       setSidebarOpen(true);
     }
+  }, []);
     
   const handleNewChat = () => {
     // 清空输入框，开始新对话
