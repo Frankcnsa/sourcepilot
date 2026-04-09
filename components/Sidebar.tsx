@@ -186,5 +186,6 @@ export default function Sidebar({ isOpen, onClose, isMobile }: SidebarProps) {
         </div>
       </div>
     </div>
+  </>
   );
 }
