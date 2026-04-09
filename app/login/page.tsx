@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { supabase } from "@/lib/supabase"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
@@ -15,6 +15,33 @@ export default function LoginPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const justVerified = searchParams.get("verified") === "true"
+  const token = searchParams.get("token")
+  const type = searchParams.get("type")
+  
+  // 处理邮件验证回调
+  useEffect(() => {
+    if (token && type === "signup") {
+      // 验证 token 并登录
+      const verifyAndSignIn = async () => {
+        try {
+          // 使用 OTP 验证
+          const { error } = await supabase.auth.verifyOtp({
+            token_hash: token,
+            type: 'email',
+          })
+          
+          if (!error) {
+            // 验证成功，刷新页面显示登录状态
+            window.location.href = "/login?verified=true"
+          }
+        } catch {
+          // 验证失败，显示错误
+          setError("Invalid or expired verification link")
+        }
+      }
+      verifyAndSignIn()
+    }
+  }, [token, type])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
