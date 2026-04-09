@@ -14,6 +14,7 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
+  const [showVerificationMessage, setShowVerificationMessage] = useState(false)
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -41,14 +42,14 @@ export default function RegisterPage() {
           data: {
             name: name || email.split("@")[0],
           },
+          emailRedirectTo: `${window.location.origin}/login`,
         },
       })
 
       if (error) {
         setError(error.message)
       } else {
-        router.push("/")
-        router.refresh()
+        setShowVerificationMessage(true)
       }
     } catch {
       setError("Something went wrong")
@@ -83,7 +84,29 @@ export default function RegisterPage() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          {showVerificationMessage && (
+            <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl">
+              <div className="text-center">
+                <div className="text-2xl mb-2">✅</div>
+                <h3 className="text-lg font-semibold text-green-800 mb-2">Account Created!</h3>
+                <p className="text-sm text-green-700 mb-3">
+                  We&apos;ve sent a verification email to <strong>{email}</strong>
+                </p>
+                <p className="text-xs text-green-600">
+                  Please check your inbox and click the verification link to activate your account.
+                </p>
+                <Link
+                  href="/login"
+                  className="mt-4 inline-block text-sm text-[#4F6DF5] hover:underline font-medium"
+                >
+                  Go to Login →
+                </Link>
+              </div>
+            </div>
+          )}
+
+          {!showVerificationMessage && (
+            <form onSubmit={handleSubmit} className="space-y-5">
             {/* Name */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -168,8 +191,18 @@ export default function RegisterPage() {
                 "Create Account"
               )}
             </button>
-          </form>
 
+            {/* Email Verification Notice */}
+            <div className="mt-4 p-3 bg-blue-50 border border-blue-100 rounded-xl">
+              <p className="text-sm text-blue-700 text-center">
+                📧 After registration, please check your email and click the verification link to activate your account.
+              </p>
+            </div>
+          </form>
+          )}
+
+          {!showVerificationMessage && (
+          <>
           {/* Divider */}
           <div className="mt-6 flex items-center gap-4">
             <div className="flex-1 h-px bg-gray-200"></div>
@@ -187,6 +220,8 @@ export default function RegisterPage() {
               Sign in
             </Link>
           </p>
+          </>
+          )}
         </div>
 
         {/* Back to Home */}
