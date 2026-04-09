@@ -463,6 +463,10 @@
     pointer-events: none;
   }
 
+  .invisible {
+    visibility: hidden;
+  }
+
   .visible {
     visibility: visible;
   }
@@ -848,6 +852,10 @@
 
   .animate-spin {
     animation: var(--animate-spin);
+  }
+
+  .touch-manipulation {
+    touch-action: manipulation;
   }
 
   .resize {
@@ -1429,8 +1437,16 @@
     key: �t4ng;
   }
 
+  .\[metatype\:�\5 7\] {
+    metatype: �7;
+  }
+
   .\[metatype\:�\5 c\] {
     metatype: �c;
+  }
+
+  .\[namc\:�\] {
+    namc: �;
   }
 
   @media (hover: hover) {
@@ -1808,6 +1824,12 @@
   @media (min-width: 48rem) {
     .md\:pointer-events-auto {
       pointer-events: auto;
+    }
+  }
+
+  @media (min-width: 48rem) {
+    .md\:visible {
+      visibility: visible;
     }
   }
 
