@@ -61,10 +61,10 @@ export default function Sidebar({ isOpen, onClose, isMobile }: SidebarProps) {
       <div
         className={`${
           isOpen 
-            ? 'translate-x-0' 
-            : '-translate-x-full'
+            ? 'translate-x-0 opacity-100' 
+            : '-translate-x-full opacity-0'
         } ${
-          !isOpen && isMobile ? 'invisible' : 'visible'
+          !isOpen ? 'pointer-events-none' : ''
         } ${
           !isOpen && !isMobile ? 'w-0 min-w-0' : ''
         } fixed md:relative z-50 h-full bg-[#f9f9f9] flex flex-col transition-all duration-300 ease-in-out overflow-hidden`}
