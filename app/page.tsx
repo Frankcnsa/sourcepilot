@@ -208,11 +208,11 @@ export default function HomePage() {
                 
                 {/* 第三排：南非语 + 阿拉伯语（RTL） */}
                 <div className="flex items-center gap-2 sm:gap-3 text-sm sm:text-lg font-medium">
-                  <span className="bg-gradient-to-r from-lime-500 via-emerald-500 to-teal-500 bg-clip-text text-transparent">
+                  <span className="bg-gradient-to-r from-blue-500 via-cyan-500 to-teal-500 bg-clip-text text-transparent">
                     Kom ons vind jou pasmaat.
                   </span>
                   <span className="text-gray-300">|</span>
-                  <span className="bg-gradient-to-r from-teal-500 via-cyan-500 to-blue-500 bg-clip-text text-transparent" dir="rtl">
+                  <span className="bg-gradient-to-r from-teal-500 via-emerald-500 to-lime-500 bg-clip-text text-transparent" dir="rtl">
                     فلنجد ما يناسبك
                   </span>
                 </div>
