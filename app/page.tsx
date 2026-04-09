@@ -51,10 +51,10 @@ export default function HomePage() {
         </div>
 
         {/* 中央内容区 */}
-        <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 -mt-10 sm:-mt-20">
+        <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 -mt-40">
           {/* Logo */}
           <div className="flex flex-col items-center mb-8 sm:mb-16">
-            <div className="w-32 h-32 sm:w-48 sm:h-48 relative mb-4 sm:mb-6">
+            <div className="w-48 h-48 relative mb-4 sm:mb-6">
               <Image
                 src="/sourcepilot_logo_transparent.png"
                 alt="SourcePilot"
