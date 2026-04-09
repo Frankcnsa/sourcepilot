@@ -39,10 +39,10 @@ export default function HomePage() {
       {/* 主内容区 */}
       <div className="flex-1 flex flex-col relative min-w-0">
         {/* 顶部导航栏 - 修复汉堡按钮点击区域 */}
-        <div className="flex items-center justify-between px-4 py-3">
+        <div className="flex items-center justify-between px-4 py-3 relative z-50">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="p-4 pt-5 pl-5 hover:bg-gray-100 rounded-xl transition-colors touch-manipulation"
+            className="p-4 pt-5 pl-5 hover:bg-gray-100 rounded-xl transition-colors touch-manipulation relative z-50"
             style={{ minHeight: '56px', minWidth: '56px' }}
           >
             <Menu size={24} className="text-gray-300" />
