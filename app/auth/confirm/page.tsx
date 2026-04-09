@@ -13,10 +13,10 @@ export default function ConfirmPage() {
   const [message, setMessage] = useState("")
 
   useEffect(() => {
-    const token = searchParams.get("token")
+    const token_hash = searchParams.get("token")
     const type = searchParams.get("type")
 
-    if (!token) {
+    if (!token_hash) {
       setStatus("error")
       setMessage("Invalid confirmation link")
       return
@@ -24,15 +24,24 @@ export default function ConfirmPage() {
 
     const verifyEmail = async () => {
       try {
-        // Supabase 会自动处理 token 验证
-        // 用户点击链接后，直接视为验证成功，跳转到登录页
-        setStatus("success")
-        setMessage("Your email has been verified successfully!")
-        
-        // 3秒后自动跳转到登录页
-        setTimeout(() => {
-          router.push("/login?verified=true")
-        }, 3000)
+        // 使用 Supabase 验证 OTP
+        const { error } = await supabase.auth.verifyOtp({
+          token_hash,
+          type: 'email',
+        })
+
+        if (error) {
+          setStatus("error")
+          setMessage(error.message)
+        } else {
+          setStatus("success")
+          setMessage("Your email has been verified successfully!")
+          
+          // 3秒后自动跳转到登录页
+          setTimeout(() => {
+            router.push("/login?verified=true")
+          }, 3000)
+        }
       } catch {
         setStatus("error")
         setMessage("Failed to verify email. Please try again.")
