@@ -51,8 +51,12 @@ export default function Sidebar({ isOpen, onClose, isMobile }: SidebarProps) {
   return (
     <div
       className={`${
-        isOpen ? 'translate-x-0 pointer-events-auto' : '-translate-x-full pointer-events-none'
-      } fixed md:relative z-50 h-full bg-[#f9f9f9] flex flex-col transition-transform duration-300 ease-in-out md:pointer-events-auto`}
+        isOpen 
+          ? 'translate-x-0 opacity-100' 
+          : '-translate-x-full opacity-0 md:opacity-100 md:translate-x-0'
+      } ${
+        isOpen ? 'z-50' : '-z-10 md:z-auto'
+      } fixed md:relative h-full bg-[#f9f9f9] flex flex-col transition-all duration-300 ease-in-out`}
       style={{ width: isMobile ? '85%' : '260px' }}
     >
       {/* 顶部区域 */}
