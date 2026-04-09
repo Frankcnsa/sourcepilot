@@ -1,12 +1,12 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, Suspense } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import Link from "next/link"
 import { Loader2, CheckCircle, XCircle } from "lucide-react"
 
-export default function ConfirmPage() {
+function ConfirmContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading")
@@ -14,7 +14,6 @@ export default function ConfirmPage() {
 
   useEffect(() => {
     const token_hash = searchParams.get("token")
-    const type = searchParams.get("type")
 
     if (!token_hash) {
       setStatus("error")
@@ -24,7 +23,6 @@ export default function ConfirmPage() {
 
     const verifyEmail = async () => {
       try {
-        // 使用 Supabase 验证 OTP
         const { error } = await supabase.auth.verifyOtp({
           token_hash,
           type: 'signup',
@@ -37,7 +35,6 @@ export default function ConfirmPage() {
           setStatus("success")
           setMessage("Your email has been verified successfully!")
           
-          // 3秒后自动跳转到登录页
           setTimeout(() => {
             router.push("/login?verified=true")
           }, 3000)
@@ -100,5 +97,20 @@ export default function ConfirmPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function ConfirmPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#f9f9f9] flex items-center justify-center px-4">
+        <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8 text-center">
+          <Loader2 size={48} className="animate-spin text-[#4F6DF5] mx-auto mb-4" />
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <ConfirmContent />
+    </Suspense>
   )
 }
