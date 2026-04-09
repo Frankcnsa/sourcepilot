@@ -2,9 +2,9 @@
 
 import { useState } from "react"
 import { supabase } from "@/lib/supabase"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
-import { Eye, EyeOff, Loader2 } from "lucide-react"
+import { Eye, EyeOff, Loader2, CheckCircle } from "lucide-react"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -13,6 +13,8 @@ export default function LoginPage() {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const justVerified = searchParams.get("verified") === "true"
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -61,6 +63,13 @@ export default function LoginPage() {
           {error && (
             <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg">
               {error}
+            </div>
+          )}
+
+          {justVerified && (
+            <div className="mb-4 p-3 bg-green-50 border border-green-200 text-green-700 text-sm rounded-lg flex items-center gap-2">
+              <CheckCircle size={18} />
+              <span>Email verified successfully! Please sign in.</span>
             </div>
           )}
 
