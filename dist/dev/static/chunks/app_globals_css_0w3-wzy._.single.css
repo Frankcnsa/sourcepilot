@@ -455,6 +455,14 @@
 @layer components;
 
 @layer utilities {
+  .pointer-events-auto {
+    pointer-events: auto;
+  }
+
+  .pointer-events-none {
+    pointer-events: none;
+  }
+
   .visible {
     visibility: visible;
   }
@@ -539,6 +547,10 @@
     left: calc(var(--spacing) * 106);
   }
 
+  .-z-10 {
+    z-index: calc(10 * -1);
+  }
+
   .z-5 {
     z-index: 5;
   }
@@ -549,6 +561,10 @@
 
   .z-50 {
     z-index: 50;
+  }
+
+  .z-auto {
+    z-index: auto;
   }
 
   .\!container {
@@ -1278,6 +1294,14 @@
     color: var(--color-gray-400);
   }
 
+  .opacity-0 {
+    opacity: 0;
+  }
+
+  .opacity-100 {
+    opacity: 1;
+  }
+
   .shadow {
     --tw-shadow: 0 1px 3px 0 var(--tw-shadow-color, #0000001a), 0 1px 2px -1px var(--tw-shadow-color, #0000001a);
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
@@ -1324,6 +1348,12 @@
 
   .transition {
     transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to, opacity, box-shadow, transform, translate, scale, rotate, filter, -webkit-backdrop-filter, backdrop-filter, display, content-visibility, overlay, pointer-events;
+    transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));
+    transition-duration: var(--tw-duration, var(--default-transition-duration));
+  }
+
+  .transition-all {
+    transition-property: all;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));
     transition-duration: var(--tw-duration, var(--default-transition-duration));
   }
@@ -1776,14 +1806,39 @@
   }
 
   @media (min-width: 48rem) {
+    .md\:pointer-events-auto {
+      pointer-events: auto;
+    }
+  }
+
+  @media (min-width: 48rem) {
     .md\:relative {
       position: relative;
     }
   }
 
   @media (min-width: 48rem) {
+    .md\:z-auto {
+      z-index: auto;
+    }
+  }
+
+  @media (min-width: 48rem) {
     .md\:hidden {
       display: none;
+    }
+  }
+
+  @media (min-width: 48rem) {
+    .md\:translate-x-0 {
+      --tw-translate-x: calc(var(--spacing) * 0);
+      translate: var(--tw-translate-x) var(--tw-translate-y);
+    }
+  }
+
+  @media (min-width: 48rem) {
+    .md\:opacity-100 {
+      opacity: 1;
     }
   }
 }
