@@ -23,9 +23,11 @@ export default function HomePage() {
       setSidebarOpen(true);
     }
     
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+  const handleNewChat = () => {
+    // 清空输入框，开始新对话
+    setInputValue('');
+    // TODO: 这里可以添加保存当前对话到历史的逻辑
+  };
 
   return (
     <div className="flex h-screen bg-white overflow-hidden">
@@ -34,6 +36,7 @@ export default function HomePage() {
         isOpen={sidebarOpen} 
         onClose={() => setSidebarOpen(false)}
         isMobile={isMobile}
+        onNewChat={handleNewChat}
       />
 
       {/* 主内容区 */}

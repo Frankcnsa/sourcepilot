@@ -22,9 +22,10 @@ interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
   isMobile: boolean;
+  onNewChat?: () => void;
 }
 
-export default function Sidebar({ isOpen, onClose, isMobile }: SidebarProps) {
+export default function Sidebar({ isOpen, onClose, isMobile, onNewChat }: SidebarProps) {
   // 模拟聊天历史
   const chatHistory = [
     { id: 1, title: 'Sourcing Requirements Analysis', active: true },
@@ -93,7 +94,13 @@ export default function Sidebar({ isOpen, onClose, isMobile }: SidebarProps) {
 
       {/* New Chat 按钮 */}
       <div className="px-3 mb-2 flex-shrink-0">
-        <button className="w-full flex items-center gap-2 px-3 py-2.5 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors text-sm font-medium text-gray-700 shadow-sm hover:shadow-md">
+        <button 
+          onClick={() => {
+            onNewChat?.();
+            if (isMobile) onClose();
+          }}
+          className="w-full flex items-center gap-2 px-3 py-2.5 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors text-sm font-medium text-gray-700 shadow-sm hover:shadow-md"
+        >
           <Plus size={18} />
           <span>New Chat</span>
         </button>
