@@ -1,15 +1,23 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Menu, Paperclip, Image as ImageIcon, Send, ChevronDown } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Menu, Paperclip, Image as ImageIcon, Send, ChevronDown, Sparkles } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
+
+interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+}
 
 export default function HomePage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [isMobile, setIsMobile] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -23,13 +31,78 @@ export default function HomePage() {
     if (window.innerWidth >= 768) {
       setSidebarOpen(true);
     }
+
+    // 监听窗口大小变化
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  // 自动滚动到最新消息
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
     
   const handleNewChat = () => {
-    // 清空输入框，开始新对话
+    // 清空输入框和消息列表，开始新对话
     setInputValue('');
-    // TODO: 这里可以添加保存当前对话到历史的逻辑
+    setMessages([]);
   };
+
+  const handleSendMessage = async () => {
+    if (!inputValue.trim() || isLoading) return;
+
+    const userMessage = inputValue.trim();
+    setInputValue('');
+    
+    // 添加用户消息到列表
+    const newMessages: Message[] = [...messages, { role: 'user', content: userMessage }];
+    setMessages(newMessages);
+    setIsLoading(true);
+
+    try {
+      // 调用后端 API
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: newMessages,
+          model: 'qwen-turbo',
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get response');
+      }
+
+      const data = await response.json();
+      
+      // 添加 AI 回复到列表
+      if (data.choices && data.choices[0]?.message) {
+        setMessages([...newMessages, {
+          role: 'assistant',
+          content: data.choices[0].message.content,
+        }]);
+      }
+    } catch (error) {
+      console.error('Chat error:', error);
+      setMessages([...newMessages, {
+        role: 'assistant',
+        content: '抱歉，服务暂时不可用，请稍后重试。',
+      }]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
+  // 是否显示欢迎界面（没有消息时）
+  const showWelcome = messages.length === 0;
 
   return (
     <div className="flex h-screen bg-white overflow-hidden">
@@ -43,7 +116,7 @@ export default function HomePage() {
 
       {/* 主内容区 */}
       <div className="flex-1 flex flex-col relative min-w-0">
-        {/* 顶部导航栏 - 修复汉堡按钮点击区域 */}
+        {/* 顶部导航栏 */}
         <div className="flex items-center justify-between px-4 py-3 relative z-50">
           <button
             onClick={() => setSidebarOpen(true)}
@@ -60,60 +133,103 @@ export default function HomePage() {
           </Link>
         </div>
 
-        {/* 中央内容区 */}
-        <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 -mt-10 sm:-mt-20">
-          {/* Logo */}
-          <div className="flex flex-col items-center mb-8 sm:mb-16">
-            <div className="w-48 h-48 relative mb-4 sm:mb-6">
-              <Image
-                src="/sourcepilot_logo_transparent.png"
-                alt="SourcePilot"
-                fill
-                className="object-contain"
-              />
+        {/* 消息列表区域 */}
+        {!showWelcome && (
+          <div className="flex-1 overflow-y-auto px-4 py-4">
+            <div className="max-w-3xl mx-auto space-y-6">
+              {messages.map((message, index) => (
+                <div
+                  key={index}
+                  className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div
+                    className={`max-w-[80%] sm:max-w-[70%] px-4 py-3 rounded-2xl ${
+                      message.role === 'user'
+                        ? 'bg-[#4F6DF5] text-white'
+                        : 'bg-gray-100 text-gray-800'
+                    }`}
+                  >
+                    <div className="text-sm whitespace-pre-wrap">{message.content}</div>
+                  </div>
+                </div>
+              ))}
+              {isLoading && (
+                <div className="flex justify-start">
+                  <div className="bg-gray-100 px-4 py-3 rounded-2xl">
+                    <div className="flex items-center gap-2">
+                      <Sparkles size={16} className="text-[#4F6DF5] animate-pulse" />
+                      <span className="text-sm text-gray-500">思考中...</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
             </div>
-            <p className="text-gray-500 text-sm tracking-wider text-center">
-              Let&apos;s find your match.
-            </p>
           </div>
+        )}
 
-          {/* 输入框区域 */}
-          <div className="w-full max-w-3xl px-2 sm:px-0">
-            <div className="relative bg-white border border-gray-200 rounded-[24px] sm:rounded-[32px] shadow-[0_4px_20px_rgb(0,0,0,0.08)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] transition-shadow">
-              <textarea
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                placeholder="How can I help you Boss?"
-                className="w-full px-4 sm:px-6 pt-4 sm:pt-5 pb-14 sm:pb-16 bg-transparent outline-none resize-none text-gray-700 placeholder-gray-400 text-base"
-                rows={isMobile ? 1 : 2}
-              />
+        {/* 中央内容区 - 欢迎界面 */}
+        {showWelcome && (
+          <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 -mt-10 sm:-mt-20">
+            {/* Logo */}
+            <div className="flex flex-col items-center mb-8 sm:mb-16">
+              <div className="w-48 h-48 relative mb-4 sm:mb-6">
+                <Image
+                  src="/sourcepilot_logo_transparent.png"
+                  alt="SourcePilot"
+                  fill
+                  className="object-contain"
+                />
+              </div>
+              <p className="text-gray-500 text-sm tracking-wider text-center">
+                Let&apos;s find your match.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* 输入框区域 */}
+        <div className="w-full max-w-3xl mx-auto px-4 sm:px-0 pb-4 sm:pb-6">
+          <div className="relative bg-white border border-gray-200 rounded-[24px] sm:rounded-[32px] shadow-[0_4px_20px_rgb(0,0,0,0.08)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] transition-shadow">
+            <textarea
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="How can I help you Boss?"
+              disabled={isLoading}
+              className="w-full px-4 sm:px-6 pt-4 sm:pt-5 pb-14 sm:pb-16 bg-transparent outline-none resize-none text-gray-700 placeholder-gray-400 text-base disabled:opacity-50"
+              rows={isMobile ? 1 : 2}
+            />
+            
+            <div className="absolute bottom-2.5 sm:bottom-3 left-3 sm:left-4 right-3 sm:right-4 flex items-center justify-between">
+              <div className="flex items-center gap-0.5 sm:gap-1">
+                <button className="p-2 hover:bg-gray-100 rounded-xl transition-colors" title="Attach file">
+                  <Paperclip size={isMobile ? 18 : 20} className="text-gray-400" />
+                </button>
+                <button className="p-2 hover:bg-gray-100 rounded-xl transition-colors" title="Upload image">
+                  <ImageIcon size={isMobile ? 18 : 20} className="text-gray-400" />
+                </button>
+              </div>
               
-              <div className="absolute bottom-2.5 sm:bottom-3 left-3 sm:left-4 right-3 sm:right-4 flex items-center justify-between">
-                <div className="flex items-center gap-0.5 sm:gap-1">
-                  <button className="p-2 hover:bg-gray-100 rounded-xl transition-colors" title="Attach file">
-                    <Paperclip size={isMobile ? 18 : 20} className="text-gray-400" />
-                  </button>
-                  <button className="p-2 hover:bg-gray-100 rounded-xl transition-colors" title="Upload image">
-                    <ImageIcon size={isMobile ? 18 : 20} className="text-gray-400" />
-                  </button>
-                </div>
-                
-                <div className="flex items-center gap-1.5 sm:gap-2">
-                  <button className="hidden sm:flex items-center gap-1 px-2 sm:px-3 py-1.5 text-xs sm:text-sm text-gray-500 hover:bg-gray-100 rounded-lg transition-colors">
-                    <span>Sourcing AI</span>
-                    <ChevronDown size={12} />
-                  </button>
-                  <button className="p-2 sm:p-2.5 bg-[#4F6DF5] hover:bg-[#4353C7] rounded-full transition-colors shadow-sm">
-                    <Send size={isMobile ? 16 : 18} className="text-white" />
-                  </button>
-                </div>
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <button className="hidden sm:flex items-center gap-1 px-2 sm:px-3 py-1.5 text-xs sm:text-sm text-gray-500 hover:bg-gray-100 rounded-lg transition-colors">
+                  <span>Sourcing AI</span>
+                  <ChevronDown size={12} />
+                </button>
+                <button 
+                  onClick={handleSendMessage}
+                  disabled={!inputValue.trim() || isLoading}
+                  className="p-2 sm:p-2.5 bg-[#4F6DF5] hover:bg-[#4353C7] disabled:bg-gray-300 disabled:cursor-not-allowed rounded-full transition-colors shadow-sm"
+                >
+                  <Send size={isMobile ? 16 : 18} className="text-white" />
+                </button>
               </div>
             </div>
-            
-            <p className="text-center text-[10px] sm:text-xs text-gray-400 mt-4 sm:mt-6 px-4">
-              AI can make mistakes. Please verify important information.
-            </p>
           </div>
+          
+          <p className="text-center text-[10px] sm:text-xs text-gray-400 mt-4 px-4">
+            AI can make mistakes. Please verify important information.
+          </p>
         </div>
       </div>
     </div>
