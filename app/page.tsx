@@ -170,10 +170,10 @@ export default function HomePage() {
 
         {/* 中央内容区 - 欢迎界面 */}
         {showWelcome && (
-          <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 -mt-10 sm:-mt-20">
+          <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 -mt-16 sm:-mt-24">
             {/* Logo */}
-            <div className="flex flex-col items-center mb-8 sm:mb-16">
-              <div className="w-48 h-48 relative mb-4 sm:mb-6">
+            <div className="flex flex-col items-center mb-6 sm:mb-10">
+              <div className="w-40 h-40 sm:w-48 sm:h-48 relative mb-4 sm:mb-5">
                 <Image
                   src="/sourcepilot_logo_transparent.png"
                   alt="SourcePilot"
@@ -181,9 +181,42 @@ export default function HomePage() {
                   className="object-contain"
                 />
               </div>
-              <p className="text-gray-500 text-sm tracking-wider text-center">
-                Let&apos;s find your match.
-              </p>
+              
+              {/* 多语言 Slogan - 渐变色排列 */}
+              <div className="flex flex-col items-center gap-2 sm:gap-3">
+                {/* 第一排：英语 + 西班牙语 */}
+                <div className="flex items-center gap-2 sm:gap-3 text-sm sm:text-lg font-medium">
+                  <span className="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 bg-clip-text text-transparent">
+                    Let&apos;s find your match.
+                  </span>
+                  <span className="text-gray-300">|</span>
+                  <span className="bg-gradient-to-r from-purple-500 via-pink-500 to-rose-500 bg-clip-text text-transparent">
+                    Encontremos tu match.
+                  </span>
+                </div>
+                
+                {/* 第二排：法语 + 俄语 */}
+                <div className="flex items-center gap-2 sm:gap-3 text-sm sm:text-lg font-medium">
+                  <span className="bg-gradient-to-r from-rose-500 via-orange-500 to-amber-500 bg-clip-text text-transparent">
+                    Trouvons votre correspondant.
+                  </span>
+                  <span className="text-gray-300">|</span>
+                  <span className="bg-gradient-to-r from-amber-500 via-yellow-500 to-lime-500 bg-clip-text text-transparent">
+                    Давайте найдем ваше совпадение.
+                  </span>
+                </div>
+                
+                {/* 第三排：阿拉伯语 + 南非语 */}
+                <div className="flex items-center gap-2 sm:gap-3 text-sm sm:text-lg font-medium">
+                  <span className="bg-gradient-to-r from-lime-500 via-emerald-500 to-teal-500 bg-clip-text text-transparent" dir="rtl">
+                    فلنجد ما يناسبك
+                  </span>
+                  <span className="text-gray-300">|</span>
+                  <span className="bg-gradient-to-r from-teal-500 via-cyan-500 to-blue-500 bg-clip-text text-transparent">
+                    Kom ons vind jou pasmaat.
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         )}
