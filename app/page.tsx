@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Menu, Paperclip, Image as ImageIcon, Send, ChevronDown } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 
 export default function HomePage() {
@@ -50,9 +51,12 @@ export default function HomePage() {
             <Menu size={24} className="text-gray-300" />
           </button>
           
-          <button className="px-4 py-2 text-sm text-[#4F6DF5] hover:bg-blue-50 rounded-xl transition-colors font-medium">
+          <Link 
+            href="/login"
+            className="px-4 py-2 text-sm text-[#4F6DF5] hover:bg-blue-50 rounded-xl transition-colors font-medium"
+          >
             Log In
-          </button>
+          </Link>
         </div>
 
         {/* 中央内容区 */}
