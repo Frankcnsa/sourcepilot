@@ -185,7 +185,7 @@ export default function HomePage() {
               {/* 多语言 Slogan - 渐变色排列 */}
               <div className="flex flex-col items-center gap-2 sm:gap-3">
                 {/* 第一排：英语 + 西班牙语 */}
-                <div className="flex items-center gap-2 sm:gap-3 text-sm sm:text-lg font-medium">
+                <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-lg font-medium">
                   <span className="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 bg-clip-text text-transparent">
                     Let&apos;s find your match.
                   </span>
