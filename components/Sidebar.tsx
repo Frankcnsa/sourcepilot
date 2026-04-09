@@ -61,8 +61,10 @@ export default function Sidebar({ isOpen, onClose, isMobile }: SidebarProps) {
       <div
         className={`${
           isOpen 
-            ? 'translate-x-0 visible' 
-            : '-translate-x-full invisible'
+            ? 'translate-x-0' 
+            : '-translate-x-full'
+        } ${
+          !isOpen && isMobile ? 'invisible' : 'visible'
         } fixed md:relative z-50 h-full bg-[#f9f9f9] flex flex-col transition-transform duration-300 ease-in-out`}
         style={{ width: isMobile ? '85%' : '260px' }}
       >
