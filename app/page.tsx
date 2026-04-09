@@ -228,7 +228,7 @@ export default function HomePage() {
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="How can I help you Boss?"
+              placeholder="How can I help you, Boss?"
               disabled={isLoading}
               className="w-full px-4 sm:px-6 pt-4 sm:pt-5 pb-14 sm:pb-16 bg-transparent outline-none resize-none text-gray-700 placeholder-gray-400 text-base disabled:opacity-50"
               rows={isMobile ? 1 : 2}
