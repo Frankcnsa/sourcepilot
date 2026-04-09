@@ -68,7 +68,7 @@ export default function Sidebar({ isOpen, onClose, isMobile }: SidebarProps) {
         } ${
           !isOpen && !isMobile ? 'w-0 min-w-0' : ''
         } fixed md:relative z-50 h-full bg-[#f9f9f9] flex flex-col transition-all duration-300 ease-in-out overflow-hidden`}
-        style={{ width: isMobile ? (isOpen ? '85%' : '0') : '260px' }}
+        style={{ width: isMobile ? (isOpen ? '85%' : '0') : (isOpen ? '260px' : '0') }}
       >
       {/* 顶部区域 */}
       <div className="flex items-center justify-between p-4 flex-shrink-0">
