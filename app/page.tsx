@@ -39,10 +39,10 @@ export default function HomePage() {
         <div className="flex items-center justify-between px-4 py-3">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="p-5 pt-6 pl-6 hover:bg-gray-100 rounded-xl transition-colors touch-manipulation"
-            style={{ minHeight: '64px', minWidth: '64px' }}
+            className="p-6 pt-8 pl-8 hover:bg-gray-100 rounded-xl transition-colors touch-manipulation"
+            style={{ minHeight: '72px', minWidth: '72px' }}
           >
-            <Menu size={26} className="text-gray-600" />
+            <Menu size={28} className="text-gray-600" />
           </button>
           
           <button className="px-4 py-2 text-sm text-[#4F6DF5] hover:bg-blue-50 rounded-xl transition-colors font-medium">
