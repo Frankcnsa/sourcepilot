@@ -65,9 +65,6 @@ export default function HomePage() {
                 className="object-contain"
               />
             </div>
-            <p className="text-gray-400 text-xs sm:text-sm tracking-wider text-center px-4">
-              Navigate the Sea. Find Your Match.
-            </p>
           </div>
 
           {/* 输入框区域 */}
