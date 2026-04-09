@@ -15,6 +15,7 @@ export default function LoginContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const justVerified = searchParams.get("verified") === "true"
+  const justReset = searchParams.get("reset") === "success"
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -73,6 +74,13 @@ export default function LoginContent() {
             </div>
           )}
 
+          {justReset && (
+            <div className="mb-4 p-3 bg-green-50 border border-green-200 text-green-700 text-sm rounded-lg flex items-center gap-2">
+              <CheckCircle size={18} />
+              <span>Password reset successfully! Please sign in with your new password.</span>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Email */}
             <div>
@@ -116,7 +124,7 @@ export default function LoginContent() {
             {/* Forgot Password */}
             <div className="text-right">
               <Link
-                href="#"
+                href="/forgot-password"
                 className="text-sm text-[#4F6DF5] hover:underline"
               >
                 Forgot password?
