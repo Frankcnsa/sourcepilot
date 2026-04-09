@@ -1,6 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import Link from 'next/link';
 import { 
   X, 
   Plus, 
@@ -14,7 +16,8 @@ import {
   FileText,
   ShoppingCart,
   BarChart3,
-  CreditCard
+  CreditCard,
+  LogOut
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -26,6 +29,34 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ isOpen, onClose, isMobile, onNewChat }: SidebarProps) {
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // 获取当前用户
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+      setLoading(false);
+    };
+    getUser();
+
+    // 监听认证状态变化
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => {
+      authListener?.subscription.unsubscribe();
+    };
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+  };
+
+  const isAuthenticated = !!user;
+
   // 模拟聊天历史
   const chatHistory = [
     { id: 1, title: 'Sourcing Requirements Analysis', active: true },
@@ -170,27 +201,56 @@ export default function Sidebar({ isOpen, onClose, isMobile, onNewChat }: Sideba
 
       {/* 用户状态栏 - 最底部固定 */}
       <div className="p-3 border-t border-gray-200 flex-shrink-0 bg-[#f9f9f9]">
-        <button className="w-full flex items-center justify-between px-2 py-2 hover:bg-gray-200 rounded-xl transition-colors">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
-              <User size={16} className="text-white" />
+        {isAuthenticated ? (
+          <>
+            <div className="flex items-center justify-between px-2 py-2">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
+                  <User size={16} className="text-white" />
+                </div>
+                <div className="text-left">
+                  <div className="text-sm font-medium text-gray-800">{user?.user_metadata?.name || user?.email?.split('@')[0] || 'Boss'}</div>
+                  <div className="text-xs text-gray-500">{user?.email}</div>
+                </div>
+              </div>
             </div>
-            <div className="text-left">
-              <div className="text-sm font-medium text-gray-800">Guest User</div>
-              <div className="text-xs text-gray-500">Click to login</div>
+            <button 
+              onClick={handleLogout}
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 mt-2 text-sm text-gray-600 hover:bg-gray-200 rounded-xl transition-colors"
+            >
+              <LogOut size={16} />
+              <span>Log Out</span>
+            </button>
+          </>
+        ) : (
+          <>
+            <Link 
+              href="/login"
+              onClick={() => isMobile && onClose()}
+              className="w-full flex items-center justify-between px-2 py-2 hover:bg-gray-200 rounded-xl transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
+                  <User size={16} className="text-white" />
+                </div>
+                <div className="text-left">
+                  <div className="text-sm font-medium text-gray-800">Guest User</div>
+                  <div className="text-xs text-gray-500">Click to login</div>
+                </div>
+              </div>
+              <ChevronDown size={16} className="text-gray-400" />
+            </Link>
+            
+            {/* Credits显示 */}
+            <div className="flex items-center justify-between px-3 py-2 mt-2 bg-blue-50 rounded-xl">
+              <div className="flex items-center gap-1.5">
+                <Gem size={14} className="text-blue-500" />
+                <span className="text-sm text-gray-600">Credits</span>
+              </div>
+              <span className="text-sm font-semibold text-blue-600">0</span>
             </div>
-          </div>
-          <ChevronDown size={16} className="text-gray-400" />
-        </button>
-        
-        {/* Credits显示 */}
-        <div className="flex items-center justify-between px-3 py-2 mt-2 bg-blue-50 rounded-xl">
-          <div className="flex items-center gap-1.5">
-            <Gem size={14} className="text-blue-500" />
-            <span className="text-sm text-gray-600">Credits</span>
-          </div>
-          <span className="text-sm font-semibold text-blue-600">0</span>
-        </div>
+          </>
+        )}
       </div>
     </div>
   </>

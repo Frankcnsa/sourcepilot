@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { signIn } from "next-auth/react"
+import { supabase } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Eye, EyeOff, Loader2 } from "lucide-react"
@@ -20,14 +20,13 @@ export default function LoginPage() {
     setError("")
 
     try {
-      const result = await signIn("credentials", {
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
-        redirect: false,
       })
 
-      if (result?.error) {
-        setError("Invalid email or password")
+      if (error) {
+        setError(error.message)
       } else {
         router.push("/")
         router.refresh()

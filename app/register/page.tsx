@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { signIn } from "next-auth/react"
+import { supabase } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Eye, EyeOff, Loader2 } from "lucide-react"
@@ -34,30 +34,21 @@ export default function RegisterPage() {
     }
 
     try {
-      const res = await fetch("/api/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, name }),
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name: name || email.split("@")[0],
+          },
+        },
       })
 
-      const data = await res.json()
-
-      if (!res.ok) {
-        setError(data.error || "Registration failed")
+      if (error) {
+        setError(error.message)
       } else {
-        // 注册成功，自动登录
-        const result = await signIn("credentials", {
-          email,
-          password,
-          redirect: false,
-        })
-
-        if (result?.error) {
-          setError("Registration successful but login failed")
-        } else {
-          router.push("/")
-          router.refresh()
-        }
+        router.push("/")
+        router.refresh()
       }
     } catch {
       setError("Something went wrong")
