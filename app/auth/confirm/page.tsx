@@ -27,7 +27,7 @@ export default function ConfirmPage() {
         // 使用 Supabase 验证 OTP
         const { error } = await supabase.auth.verifyOtp({
           token_hash,
-          type: 'email',
+          type: 'signup',
         })
 
         if (error) {
