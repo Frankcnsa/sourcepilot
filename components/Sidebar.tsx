@@ -60,12 +60,11 @@ export default function Sidebar({ isOpen, onClose, isMobile }: SidebarProps) {
       
       <div
         className={`${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
-        } fixed md:relative z-50 h-full bg-[#f9f9f9] flex flex-col transition-transform duration-300 ease-in-out`}
-        style={{ 
-          width: isMobile ? '85%' : '260px',
-          visibility: isOpen ? 'visible' : 'hidden'
-        }}
+          isOpen 
+            ? 'translate-x-0 opacity-100' 
+            : '-translate-x-full opacity-0 pointer-events-none'
+        } fixed md:relative z-50 h-full bg-[#f9f9f9] flex flex-col transition-all duration-300 ease-in-out md:opacity-100 md:translate-x-0 md:pointer-events-auto`}
+        style={{ width: isMobile ? '85%' : '260px' }}
       >
       {/* 顶部区域 */}
       <div className="flex items-center justify-between p-4 flex-shrink-0">
