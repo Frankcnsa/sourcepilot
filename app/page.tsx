@@ -50,50 +50,12 @@ export default function HomePage() {
     setMessages([]);
   };
 
-  const handleSendMessage = async () => {
-    if (!inputValue.trim() || isLoading) return;
-
-    const userMessage = inputValue.trim();
-    setInputValue('');
+  const handleSendMessage = () => {
+    if (!inputValue.trim()) return;
     
-    // 添加用户消息到列表
-    const newMessages: Message[] = [...messages, { role: 'user', content: userMessage }];
-    setMessages(newMessages);
-    setIsLoading(true);
-
-    try {
-      // 调用后端 API
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: newMessages,
-          model: 'qwen-turbo',
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to get response');
-      }
-
-      const data = await response.json();
-      
-      // 添加 AI 回复到列表
-      if (data.choices && data.choices[0]?.message) {
-        setMessages([...newMessages, {
-          role: 'assistant',
-          content: data.choices[0].message.content,
-        }]);
-      }
-    } catch (error) {
-      console.error('Chat error:', error);
-      setMessages([...newMessages, {
-        role: 'assistant',
-        content: '抱歉，服务暂时不可用，请稍后重试。',
-      }]);
-    } finally {
-      setIsLoading(false);
-    }
+    // 跳转到 chat 页面，带上初始消息
+    const encodedMessage = encodeURIComponent(inputValue.trim());
+    window.location.href = `/chat?initial=${encodedMessage}`;
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {

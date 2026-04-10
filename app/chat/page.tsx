@@ -35,6 +35,7 @@ export default function ChatPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [conversationState, setConversationState] = useState<ConversationState>({});
   const [step, setStep] = useState(0);
+  const [initialProcessed, setInitialProcessed] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -49,6 +50,54 @@ export default function ChatPage() {
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  // 处理从首页跳转过来的 initial 消息
+  useEffect(() => {
+    if (initialProcessed) return;
+    
+    const params = new URLSearchParams(window.location.search);
+    const initialMessage = params.get('initial');
+    
+    if (initialMessage) {
+      setInitialProcessed(true);
+      // 解码并自动发送
+      const decodedMessage = decodeURIComponent(initialMessage);
+      handleInitialMessage(decodedMessage);
+      // 清除 URL 参数
+      window.history.replaceState({}, '', '/chat');
+    }
+  }, [initialProcessed]);
+
+  const handleInitialMessage = async (message: string) => {
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: message,
+      timestamp: new Date(),
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    setIsLoading(true);
+
+    setTimeout(() => {
+      const newState = { ...conversationState };
+      newState.language = message;
+      setConversationState(newState);
+      
+      const nextStep = 1;
+      setStep(nextStep);
+
+      const aiResponse: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: getNextQuestion(nextStep, newState),
+        timestamp: new Date(),
+      };
+
+      setMessages((prev) => [...prev, aiResponse]);
+      setIsLoading(false);
+    }, 1000);
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
