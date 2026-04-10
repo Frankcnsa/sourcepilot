@@ -170,7 +170,7 @@ export default function HomePage() {
 
         {/* 中央内容区 - 欢迎界面 */}
         {showWelcome && (
-          <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 -mt-20 sm:-mt-32">
+          <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 -mt-28 sm:-mt-40">
             {/* 多语言 Slogan - 渐变色排列（在上） */}
             <div className="flex flex-col items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
               {/* 第一排：英语 + 西班牙语 */}
