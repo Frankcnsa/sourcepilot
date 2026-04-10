@@ -282,7 +282,9 @@ export default function ChatPage() {
               </div>
             </div>
             
-
+            <p className="text-center text-[10px] sm:text-xs text-gray-400 mt-2 sm:mt-3">
+              AI can make mistakes. Please verify important information.
+            </p>
           </div>
         </div>
       </div>
