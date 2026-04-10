@@ -1,5 +1,7 @@
 'use client';
 
+// Cache buster: v9 - ensure warning removed
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Menu, Paperclip, Image as ImageIcon, Send, ChevronDown, Sparkles } from 'lucide-react';
 import Image from 'next/image';
