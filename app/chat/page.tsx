@@ -247,7 +247,7 @@ export default function ChatPage() {
         </div>
 
         {/* 输入框 */}
-        <div className="border-t border-gray-100 px-2.5 sm:px-4 pt-2.5 sm:pt-4 pb-8 sm:pb-10 bg-white">
+        <div className="border-t border-gray-100 px-2.5 sm:px-4 pt-2.5 sm:pt-4 pb-8 sm:pb-6 bg-white">
           <div className="max-w-4xl mx-auto">
             <div className="relative bg-white border border-gray-200 rounded-[20px] sm:rounded-[24px] shadow-[0_2px_12px_rgb(0,0,0,0.06)] hover:shadow-[0_4px_20px_rgb(0,0,0,0.1)] transition-shadow">
               <textarea
