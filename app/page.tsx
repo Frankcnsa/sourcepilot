@@ -170,7 +170,7 @@ export default function HomePage() {
 
         {/* 中央内容区 - 欢迎界面 */}
         {showWelcome && (
-          <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 -mt-8 sm:-mt-20">
+          <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 -mt-20 sm:-mt-32">
             {/* 多语言 Slogan - 渐变色排列（在上） */}
             <div className="flex flex-col items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
               {/* 第一排：英语 + 西班牙语 */}
@@ -220,7 +220,7 @@ export default function HomePage() {
         )}
 
         {/* 输入框区域 */}
-        <div className="w-full max-w-3xl mx-auto px-4 sm:px-0 pb-10 sm:pb-8">
+        <div className="w-full max-w-3xl mx-auto px-4 sm:px-0 pb-6 sm:pb-6">
           <div className="relative bg-white border border-gray-200 rounded-[24px] sm:rounded-[32px] shadow-[0_4px_20px_rgb(0,0,0,0.08)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] transition-shadow">
             <textarea
               value={inputValue}
