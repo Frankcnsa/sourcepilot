@@ -170,9 +170,19 @@ export default function HomePage() {
 
         {/* 中央内容区 - 欢迎界面 */}
         {showWelcome && (
-          <div className="flex flex-col items-center px-4 sm:px-6 pt-12 sm:pt-16">
-            {/* 多语言 Slogan - 渐变色排列（在上） */}
-            <div className="flex flex-col items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+          <div className="flex flex-col items-center px-4 sm:px-6 pt-8 sm:pt-12">
+            {/* Logo（最上面，缩小） */}
+            <div className="w-24 h-24 sm:w-32 sm:h-32 relative mb-4 sm:mb-6">
+              <Image
+                src="/sourcepilot_logo_transparent.png"
+                alt="SourcePilot"
+                fill
+                className="object-contain"
+              />
+            </div>
+            
+            {/* 多语言 Slogan - 渐变色排列 */}
+            <div className="flex flex-col items-center gap-2 sm:gap-3 mb-4 sm:mb-4">
               {/* 第一排：英语 + 西班牙语 */}
               <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-base font-medium">
                 <span className="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 bg-clip-text text-transparent">
@@ -207,17 +217,7 @@ export default function HomePage() {
               </div>
             </div>
             
-            {/* Logo（在下，紧跟阿拉伯语排） */}
-            <div className="w-32 h-32 sm:w-40 sm:h-40 relative mb-4 sm:mb-6">
-              <Image
-                src="/sourcepilot_logo_transparent.png"
-                alt="SourcePilot"
-                fill
-                className="object-contain"
-              />
-            </div>
-            
-            {/* 输入框区域（紧跟Logo下方） */}
+            {/* 输入框区域（紧跟Slogan下方） */}
             <div className="w-full max-w-3xl px-4 sm:px-0">
               <div className="relative bg-white border border-gray-200 rounded-[24px] sm:rounded-[32px] shadow-[0_4px_20px_rgb(0,0,0,0.08)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] transition-shadow">
                 <textarea
