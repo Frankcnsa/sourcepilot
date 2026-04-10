@@ -1,6 +1,6 @@
 'use client';
 
-// Cache buster: v9 - ensure warning removed
+// Cache buster: v12 - force rebuild
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Menu, Paperclip, Image as ImageIcon, Send, ChevronDown, Sparkles } from 'lucide-react';
