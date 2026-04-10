@@ -170,7 +170,7 @@ export default function HomePage() {
 
         {/* 中央内容区 - 欢迎界面 */}
         {showWelcome && (
-          <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 -mt-16 sm:-mt-24">
+          <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 -mt-24 sm:-mt-32">
             {/* Logo */}
             <div className="flex flex-col items-center mb-6 sm:mb-10">
               <div className="w-40 h-40 sm:w-48 sm:h-48 relative mb-4 sm:mb-5">
