@@ -146,7 +146,7 @@ export default function HomePage() {
             </div>
             
             {/* 多语言 Slogan - 渐变色排列（中间） */}
-            <div className="flex flex-col items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+            <div className="flex flex-col items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
               {/* 第一排：英语 + 西班牙语 */}
               <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-base font-medium">
                 <span className="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 bg-clip-text text-transparent">
