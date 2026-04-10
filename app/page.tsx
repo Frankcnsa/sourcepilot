@@ -172,7 +172,7 @@ export default function HomePage() {
         {showWelcome && (
           <div className="flex flex-col items-center px-4 sm:px-6 pt-8 sm:pt-12">
             {/* Logo（最上面） */}
-            <div className="w-24 h-24 sm:w-32 sm:h-32 relative mb-4 sm:mb-4">
+            <div className="w-32 h-32 sm:w-40 sm:h-40 relative mb-4 sm:mb-4">
               <Image
                 src="/sourcepilot_logo_transparent.png"
                 alt="SourcePilot"
