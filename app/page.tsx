@@ -260,9 +260,7 @@ export default function HomePage() {
             </div>
           </div>
           
-          <p className="text-center text-[10px] sm:text-xs text-gray-400 mt-4 px-4">
-            AI can make mistakes. Please verify important information.
-          </p>
+
         </div>
       </div>
     </div>
