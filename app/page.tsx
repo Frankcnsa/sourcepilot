@@ -181,8 +181,44 @@ export default function HomePage() {
               />
             </div>
             
-            {/* 输入框区域（紧跟Logo下方 - 红色位置） */}
-            <div className="w-full max-w-3xl px-4 sm:px-0 mb-4 sm:mb-6">
+            {/* 多语言 Slogan - 渐变色排列（中间） */}
+            <div className="flex flex-col items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+              {/* 第一排：英语 + 西班牙语 */}
+              <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-base font-medium">
+                <span className="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 bg-clip-text text-transparent">
+                  Let&apos;s find your match.
+                </span>
+                <span className="text-gray-300">|</span>
+                <span className="bg-gradient-to-r from-purple-500 via-pink-500 to-rose-500 bg-clip-text text-transparent">
+                  Encontremos tu match.
+                </span>
+              </div>
+              
+              {/* 第二排：法语 + 俄语 */}
+              <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-base font-medium">
+                <span className="bg-gradient-to-r from-rose-500 via-orange-500 to-amber-500 bg-clip-text text-transparent">
+                  Trouvons votre correspondant.
+                </span>
+                <span className="text-gray-300">|</span>
+                <span className="bg-gradient-to-r from-amber-500 via-yellow-500 to-lime-500 bg-clip-text text-transparent">
+                  Давайте найдем ваше совпадение.
+                </span>
+              </div>
+              
+              {/* 第三排：南非语 + 阿拉伯语（RTL） */}
+              <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-base font-medium">
+                <span className="bg-gradient-to-r from-blue-500 via-cyan-500 to-teal-500 bg-clip-text text-transparent">
+                  Kom ons vind jou pasmaat.
+                </span>
+                <span className="text-gray-300">|</span>
+                <span className="bg-gradient-to-r from-teal-500 via-emerald-500 to-lime-500 bg-clip-text text-transparent" dir="rtl">
+                  فلنجد ما يناسبك
+                </span>
+              </div>
+            </div>
+            
+            {/* 输入框区域（最下面，紧跟Slogan） */}
+            <div className="w-full max-w-3xl px-4 sm:px-0">
               <div className="relative bg-white border border-gray-200 rounded-[24px] sm:rounded-[32px] shadow-[0_4px_20px_rgb(0,0,0,0.08)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] transition-shadow">
                 <textarea
                   value={inputValue}
@@ -218,42 +254,6 @@ export default function HomePage() {
                     </button>
                   </div>
                 </div>
-              </div>
-            </div>
-            
-            {/* 多语言 Slogan - 渐变色排列（在输入框下方） */}
-            <div className="flex flex-col items-center gap-2 sm:gap-3">
-              {/* 第一排：英语 + 西班牙语 */}
-              <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-base font-medium">
-                <span className="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 bg-clip-text text-transparent">
-                  Let&apos;s find your match.
-                </span>
-                <span className="text-gray-300">|</span>
-                <span className="bg-gradient-to-r from-purple-500 via-pink-500 to-rose-500 bg-clip-text text-transparent">
-                  Encontremos tu match.
-                </span>
-              </div>
-              
-              {/* 第二排：法语 + 俄语 */}
-              <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-base font-medium">
-                <span className="bg-gradient-to-r from-rose-500 via-orange-500 to-amber-500 bg-clip-text text-transparent">
-                  Trouvons votre correspondant.
-                </span>
-                <span className="text-gray-300">|</span>
-                <span className="bg-gradient-to-r from-amber-500 via-yellow-500 to-lime-500 bg-clip-text text-transparent">
-                  Давайте найдем ваше совпадение.
-                </span>
-              </div>
-              
-              {/* 第三排：南非语 + 阿拉伯语（RTL） */}
-              <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-base font-medium">
-                <span className="bg-gradient-to-r from-blue-500 via-cyan-500 to-teal-500 bg-clip-text text-transparent">
-                  Kom ons vind jou pasmaat.
-                </span>
-                <span className="text-gray-300">|</span>
-                <span className="bg-gradient-to-r from-teal-500 via-emerald-500 to-lime-500 bg-clip-text text-transparent" dir="rtl">
-                  فلنجد ما يناسبك
-                </span>
               </div>
             </div>
           </div>
