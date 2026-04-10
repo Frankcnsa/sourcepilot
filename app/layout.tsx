@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "SourcePilot - Navigate the Sea. Find Your Match.",
-  description: "AI-powered sourcing assistant for finding the best suppliers in China. Updated 2026-04-10.",
+  description: "AI-powered sourcing assistant for finding the best suppliers in China. Updated 2026-04-10-v11.",
 };
 
 export default function RootLayout({
