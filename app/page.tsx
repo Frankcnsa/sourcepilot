@@ -222,7 +222,7 @@ export default function HomePage() {
         )}
 
         {/* 输入框区域 */}
-        <div className="w-full max-w-3xl mx-auto px-4 sm:px-0 pb-4 sm:pb-6">
+        <div className="w-full max-w-3xl mx-auto px-4 sm:px-0 pb-10 sm:pb-12">
           <div className="relative bg-white border border-gray-200 rounded-[24px] sm:rounded-[32px] shadow-[0_4px_20px_rgb(0,0,0,0.08)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] transition-shadow">
             <textarea
               value={inputValue}
