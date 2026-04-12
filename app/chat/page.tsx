@@ -33,10 +33,16 @@ export default function ChatPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
-  // 获取当前语言（简化版，后续接入 i18n）
+  // 获取当前语言（根据用户输入检测）
   const getCurrentLocale = () => {
-    // 暂时默认英文，后续从 i18n context 获取
-    return 'en';
+    // 检测最后一条用户消息是否包含中文
+    const lastUserMessage = messages
+      .filter(m => m.role === 'user')
+      .pop()?.content || '';
+    
+    // 如果有中文字符，返回 'zh'，否则 'en'
+    const hasChinese = /[\u4e00-\u9fa5]/.test(lastUserMessage);
+    return hasChinese ? 'zh' : 'en';
   };
 
   // 开场白
