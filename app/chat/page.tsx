@@ -29,9 +29,26 @@ export default function ChatPage() {
   const [pendingPdf, setPendingPdf] = useState<{ name: string; data: string } | null>(null);
   const [activeRole, setActiveRole] = useState<'grace' | 'frank'>('grace');
   const [conversationId, setConversationId] = useState<string>('');
+  const [user, setUser] = useState<any>(null); // 当前登录用户
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+
+  // 检测用户登录状态
+  useEffect(() => {
+    const checkUser = async () => {
+      try {
+        const response = await fetch('/api/auth/session');
+        if (response.ok) {
+          const data = await response.json();
+          setUser(data.user);
+        }
+      } catch (error) {
+        console.log('Not logged in');
+      }
+    };
+    checkUser();
+  }, []);
 
   // 获取当前语言（根据用户输入检测）
   const getCurrentLocale = () => {
@@ -85,7 +102,10 @@ export default function ChatPage() {
     // 如果 Grace 返回 ready_for_sourcing，切换到 Frank
     if (graceStatus === 'ready_for_sourcing') return true;
     
-    // 简单逻辑：3轮对话后，或用户明确说"report"、"frank"等
+    // 已登录用户：不限制轮数，只有当 Grace 说收集完成才切换
+    if (user) return false;
+    
+    // 未登录用户：3轮对话后强制切换，或用户明确说"report"、"frank"等
     const count = userMessages.length;
     const lastMessage = userMessages[userMessages.length - 1]?.content.toLowerCase() || '';
     return count >= 3 || lastMessage.includes('report') || lastMessage.includes('frank') || lastMessage.includes('generate');
