@@ -42,6 +42,7 @@ export default function ChatPage() {
   const [conversationId, setConversationId] = useState<string>('');
   const [user, setUser] = useState<any>(null);
   const [awaitingDestination, setAwaitingDestination] = useState(false);
+  const [userLanguage, setUserLanguage] = useState<'zh' | 'en'>('en'); // 记住用户的语言偏好
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -62,13 +63,24 @@ export default function ChatPage() {
     checkUser();
   }, []);
 
-  // 获取当前语言
+  // 获取当前语言（首次检测后记住，不再变化）
   const getCurrentLocale = () => {
+    // 如果已经有语言偏好，直接使用
+    if (userLanguage) return userLanguage;
+    
+    // 首次检测：根据最后一条用户消息
     const lastUserMessage = messages
       .filter(m => m.role === 'user')
       .pop()?.content || '';
     const hasChinese = /[\u4e00-\u9fa5]/.test(lastUserMessage);
-    return hasChinese ? 'zh' : 'en';
+    const detectedLang = hasChinese ? 'zh' : 'en';
+    
+    // 记住语言偏好
+    if (lastUserMessage) {
+      setUserLanguage(detectedLang);
+    }
+    
+    return detectedLang;
   };
 
   // 开场白
@@ -377,6 +389,7 @@ export default function ChatPage() {
     setConversationId('');
     setActiveRole('grace');
     setAwaitingDestination(false);
+    setUserLanguage('en'); // 重置语言偏好
     
     setTimeout(() => {
       const frankMsg: Message = {
