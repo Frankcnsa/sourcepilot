@@ -1,9 +1,9 @@
 'use client';
 
-// Cache buster: v12 - force rebuild
+// Cache buster: v16 - mobile textarea height increase
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Menu, Paperclip, Image as ImageIcon, Send, ChevronDown, Sparkles } from 'lucide-react';
+import { Menu, Paperclip, Image as ImageIcon, Send, ChevronDown, Sparkles, X } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
@@ -13,13 +13,23 @@ interface Message {
   content: string;
 }
 
+interface SelectedFile {
+  type: 'image' | 'pdf';
+  data: string; // base64
+  name?: string;
+  preview?: string; // for images
+}
+
 export default function HomePage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [isMobile, setIsMobile] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<SelectedFile[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -29,33 +39,114 @@ export default function HomePage() {
     
     checkMobile();
     
-    // 初始化时，PC端自动打开侧边栏
     if (window.innerWidth >= 768) {
       setSidebarOpen(true);
     }
 
-    // 监听窗口大小变化
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // 自动滚动到最新消息
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
     
   const handleNewChat = () => {
-    // 清空输入框和消息列表，开始新对话
     setInputValue('');
     setMessages([]);
+    setSelectedFiles([]);
+  };
+
+  // 处理图片选择
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image size should be less than 5MB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64 = event.target?.result as string;
+      setSelectedFiles(prev => [...prev, {
+        type: 'image',
+        data: base64,
+        preview: base64,
+        name: file.name
+      }]);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // 处理PDF选择
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.type !== 'application/pdf') {
+      alert('Please select a PDF file');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      alert('PDF size should be less than 10MB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64 = event.target?.result as string;
+      setSelectedFiles(prev => [...prev, {
+        type: 'pdf',
+        data: base64,
+        name: file.name
+      }]);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // 移除已选文件
+  const removeFile = (index: number) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSendMessage = () => {
-    if (!inputValue.trim()) return;
+    const hasContent = inputValue.trim() || selectedFiles.length > 0;
+    if (!hasContent) return;
     
-    // 跳转到 chat 页面，带上初始消息
-    const encodedMessage = encodeURIComponent(inputValue.trim());
-    window.location.href = `/chat?initial=${encodedMessage}`;
+    setIsLoading(true);
+    
+    // 构建URL参数
+    const params = new URLSearchParams();
+    
+    if (inputValue.trim()) {
+      params.set('initial', inputValue.trim());
+    }
+    
+    // 添加图片参数（只取第一个图片）
+    const imageFile = selectedFiles.find(f => f.type === 'image');
+    if (imageFile) {
+      params.set('image', imageFile.data);
+    }
+    
+    // 添加PDF参数（只取第一个PDF）
+    const pdfFile = selectedFiles.find(f => f.type === 'pdf');
+    if (pdfFile) {
+      params.set('pdf', pdfFile.data);
+      if (pdfFile.name) {
+        params.set('pdfName', pdfFile.name);
+      }
+    }
+    
+    // 跳转到 chat 页面
+    window.location.href = `/chat?${params.toString()}`;
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -65,12 +156,10 @@ export default function HomePage() {
     }
   };
 
-  // 是否显示欢迎界面（没有消息时）
   const showWelcome = messages.length === 0;
 
   return (
     <div className="flex h-screen bg-white overflow-hidden">
-      {/* 侧边栏 */}
       <Sidebar 
         isOpen={sidebarOpen} 
         onClose={() => setSidebarOpen(false)}
@@ -78,9 +167,7 @@ export default function HomePage() {
         onNewChat={handleNewChat}
       />
 
-      {/* 主内容区 */}
       <div className="flex-1 flex flex-col relative min-w-0">
-        {/* 顶部导航栏 */}
         <div className="flex items-center justify-between px-4 py-3 relative z-50">
           <button
             onClick={() => setSidebarOpen(true)}
@@ -97,7 +184,6 @@ export default function HomePage() {
           </Link>
         </div>
 
-        {/* 消息列表区域 */}
         {!showWelcome && (
           <div className="flex-1 overflow-y-auto px-4 py-4">
             <div className="max-w-3xl mx-auto space-y-6">
@@ -132,10 +218,8 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* 中央内容区 - 欢迎界面 */}
         {showWelcome && (
           <div className="flex flex-col items-center px-4 sm:px-6 pt-8 sm:pt-12">
-            {/* Logo（最上面） */}
             <div className="w-32 h-32 sm:w-40 sm:h-40 relative mb-4 sm:mb-4">
               <Image
                 src="/sourcepilot_logo_transparent.png"
@@ -145,9 +229,7 @@ export default function HomePage() {
               />
             </div>
             
-            {/* 多语言 Slogan - 渐变色排列（中间） */}
             <div className="flex flex-col items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
-              {/* 第一排：英语 + 西班牙语 */}
               <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-base font-medium">
                 <span className="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 bg-clip-text text-transparent">
                   Let&apos;s find your match.
@@ -158,7 +240,6 @@ export default function HomePage() {
                 </span>
               </div>
               
-              {/* 第二排：法语 + 俄语 */}
               <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-base font-medium">
                 <span className="bg-gradient-to-r from-rose-500 via-orange-500 to-amber-500 bg-clip-text text-transparent">
                   Trouvons votre correspondant.
@@ -169,7 +250,6 @@ export default function HomePage() {
                 </span>
               </div>
               
-              {/* 第三排：南非语 + 阿拉伯语（RTL） */}
               <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-base font-medium">
                 <span className="bg-gradient-to-r from-blue-500 via-cyan-500 to-teal-500 bg-clip-text text-transparent">
                   Kom ons vind jou pasmaat.
@@ -181,25 +261,81 @@ export default function HomePage() {
               </div>
             </div>
             
-            {/* 输入框区域（最下面，紧跟Slogan） */}
+            {/* 输入框区域 */}
             <div className="w-full max-w-3xl px-4 sm:px-0">
+              {/* 已选文件预览 */}
+              {selectedFiles.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {selectedFiles.map((file, index) => (
+                    <div key={index} className="relative group">
+                      {file.type === 'image' ? (
+                        <div className="relative w-16 h-16 rounded-lg overflow-hidden border border-gray-200">
+                          <img 
+                            src={file.preview} 
+                            alt="Preview" 
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 px-3 py-2 bg-gray-100 rounded-lg border border-gray-200">
+                          <Paperclip size={16} className="text-gray-500" />
+                          <span className="text-sm text-gray-700 truncate max-w-[120px]">
+                            {file.name}
+                          </span>
+                        </div>
+                      )}
+                      <button
+                        onClick={() => removeFile(index)}
+                        className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
               <div className="relative bg-white border border-gray-200 rounded-[24px] sm:rounded-[32px] shadow-[0_4px_20px_rgb(0,0,0,0.08)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] transition-shadow">
                 <textarea
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="How can I help you, Boss?"
+                  placeholder={`Hi Boss! This is Frank, your sourcepilot today. How can I help?\nI can speak: English, Español, Français, Русский, Afrikaans, عربي`}
                   disabled={isLoading}
-                  className="w-full px-4 sm:px-6 pt-4 sm:pt-5 pb-14 sm:pb-16 bg-transparent outline-none resize-none text-gray-700 placeholder-gray-400 text-base disabled:opacity-50"
-                  rows={isMobile ? 1 : 2}
+                  className="w-full px-4 sm:px-6 pt-5 sm:pt-5 pb-20 sm:pb-20 bg-transparent outline-none resize-none text-gray-700 placeholder-gray-400 text-base disabled:opacity-50"
+                  rows={isMobile ? 4 : 3}
                 />
                 
                 <div className="absolute bottom-2.5 sm:bottom-3 left-3 sm:left-4 right-3 sm:right-4 flex items-center justify-between">
                   <div className="flex items-center gap-0.5 sm:gap-1">
-                    <button className="p-2 hover:bg-gray-100 rounded-xl transition-colors" title="Attach file">
+                    {/* 隐藏的文件输入 */}
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileSelect}
+                      accept=".pdf"
+                      className="hidden"
+                    />
+                    <input
+                      type="file"
+                      ref={imageInputRef}
+                      onChange={handleImageSelect}
+                      accept="image/*"
+                      className="hidden"
+                    />
+                    
+                    <button 
+                      onClick={() => fileInputRef.current?.click()}
+                      className="p-2 hover:bg-gray-100 rounded-xl transition-colors" 
+                      title="Attach PDF file"
+                    >
                       <Paperclip size={isMobile ? 18 : 20} className="text-gray-400" />
                     </button>
-                    <button className="p-2 hover:bg-gray-100 rounded-xl transition-colors" title="Upload image">
+                    <button 
+                      onClick={() => imageInputRef.current?.click()}
+                      className="p-2 hover:bg-gray-100 rounded-xl transition-colors" 
+                      title="Upload image"
+                    >
                       <ImageIcon size={isMobile ? 18 : 20} className="text-gray-400" />
                     </button>
                   </div>
@@ -211,7 +347,7 @@ export default function HomePage() {
                     </button>
                     <button 
                       onClick={handleSendMessage}
-                      disabled={!inputValue.trim() || isLoading}
+                      disabled={(!inputValue.trim() && selectedFiles.length === 0) || isLoading}
                       className="p-2 sm:p-2.5 bg-[#4F6DF5] hover:bg-[#4353C7] disabled:bg-gray-300 disabled:cursor-not-allowed rounded-full transition-colors shadow-sm"
                     >
                       <Send size={isMobile ? 16 : 18} className="text-white" />
@@ -223,7 +359,6 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* 输入框区域 - 只在有消息时显示 */}
         {!showWelcome && (
           <div className="w-full max-w-3xl mx-auto px-4 sm:px-0 pb-6 sm:pb-6">
             <div className="relative bg-white border border-gray-200 rounded-[24px] sm:rounded-[32px] shadow-[0_4px_20px_rgb(0,0,0,0.08)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] transition-shadow">
