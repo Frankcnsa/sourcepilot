@@ -222,32 +222,88 @@ export default function ChatPage() {
         }
         
       } else {
-        // Frank 模式，调用原有 API
-        const response = await fetch('/api/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            messages: [...messages, userMessage].map(m => ({
-              role: m.role,
-              content: m.content,
-            })),
-            sessionId,
-            role: 'frank',
-          }),
-        });
-
-        const data = await response.json();
+        // Frank 模式
+        const userContent = userMessage.content.toLowerCase();
+        const isConfirmed = userContent.includes('确认') || userContent.includes('好的') || 
+                           userContent.includes('可以') || userContent.includes('yes') || 
+                           userContent.includes('ok') || userContent.includes('sure') ||
+                           userContent.includes('proceed') || userContent.includes('generate');
         
-        const aiMessage: Message = {
-          id: (Date.now() + 2).toString(),
-          role: 'assistant',
-          sender: 'frank',
-          content: data.response || data.choices?.[0]?.message?.content || 'Sorry, I could not process that.',
-          timestamp: new Date(),
-        };
+        if (isConfirmed && activeRole === 'frank') {
+          // 用户确认后，Frank 生成报告并介绍后续服务
+          const hasChinese = /[\u4e00-\u9fa5]/.test(userMessage.content);
+          
+          let frankReply: string;
+          if (hasChinese) {
+            frankReply = `✅ 收到！我正在为您生成《寻源需求分析报告》...\n\n` +
+              `📧 报告将在 1-2 分钟内发送至您的邮箱，请留意查收。\n\n` +
+              `---\n\n` +
+              `💡 **后续我们还为您提供以下服务：**\n\n` +
+              `1️⃣ **供应商深度评估报告** - 针对特定供应商的资质、产能、信誉全面评估\n` +
+              `2️⃣ **样品检测报告** - 协助安排第三方检测，确保产品质量\n` +
+              `3️⃣ **合同审核服务** - 专业法务团队审核采购合同条款\n` +
+              `4️⃣ **物流方案咨询** - 最优运输方式和清关方案建议\n\n` +
+              `📌 **温馨提示：**\n` +
+              `请保存好我们发给您的报告，下次直接传给我们，我们可以继续为您提供服务！\n\n` +
+              `有任何问题随时找我。祝采购顺利！🤝`;
+          } else {
+            frankReply = `✅ Got it! I'm generating your Sourcing Requirements Analysis Report...\n\n` +
+              `📧 The report will be sent to your email within 1-2 minutes. Please check your inbox.\n\n` +
+              `---\n\n` +
+              `💡 **Additional Services We Offer:**\n\n` +
+              `1️⃣ **Supplier Deep Dive Report** - Comprehensive assessment of specific suppliers' qualifications, capacity, and reputation\n` +
+              `2️⃣ **Sample Inspection Service** - Third-party quality inspection coordination\n` +
+              `3️⃣ **Contract Review Service** - Professional legal team review of procurement contracts\n` +
+              `4️⃣ **Logistics Consulting** - Optimal shipping and customs clearance solutions\n\n` +
+              `📌 **Pro Tip:**\n` +
+              `Please save the reports we send you. Upload them to us next time, and we can continue serving you seamlessly!\n\n` +
+              `Feel free to reach out anytime. Happy sourcing! 🤝`;
+          }
+          
+          const frankMsg: Message = {
+            id: (Date.now() + 2).toString(),
+            role: 'assistant',
+            sender: 'frank',
+            content: frankReply,
+            timestamp: new Date(),
+          };
+          
+          setMessages(prev => [...prev, frankMsg]);
+          
+          // TODO: 触发后台异步任务生成 PDF 报告
+          // - 查询供应商数据库
+          // - Kimi 分析整理
+          // - 生成 PDF
+          // - Email 发送
+          
+        } else {
+          // 普通 Frank 对话，调用 API
+          const response = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              messages: [...messages, userMessage].map(m => ({
+                role: m.role,
+                content: m.content,
+              })),
+              sessionId,
+              role: 'frank',
+            }),
+          });
 
-        setMessages(prev => [...prev, aiMessage]);
-        if (data.sessionId) setSessionId(data.sessionId);
+          const data = await response.json();
+          
+          const aiMessage: Message = {
+            id: (Date.now() + 2).toString(),
+            role: 'assistant',
+            sender: 'frank',
+            content: data.response || data.choices?.[0]?.message?.content || 'Sorry, I could not process that.',
+            timestamp: new Date(),
+          };
+
+          setMessages(prev => [...prev, aiMessage]);
+          if (data.sessionId) setSessionId(data.sessionId);
+        }
       }
       
     } catch (error) {
