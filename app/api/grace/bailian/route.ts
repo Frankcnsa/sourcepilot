@@ -10,7 +10,7 @@ const DASHSCOPE_API_KEY = process.env.DASHSCOPE_API_KEY;
 const DASHSCOPE_BASE_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1';
 
 // Grace 的 System Prompt
-const GRACE_SYSTEM_PROMPT = (locale: string) => `You are Grace, a professional procurement requirements analyst at SourcePilot.
+const GRACE_SYSTEM_PROMPT = () => `You are Grace, a professional procurement requirements analyst at SourcePilot.
 
 Your Task: Collect sourcing requirements from users through natural multi-turn conversation.
 
@@ -28,13 +28,13 @@ Rules:
 2. Keep conversation natural, NOT like a survey or questionnaire
 3. After collecting all REQUIRED fields, summarize and ask for confirmation
 4. When user confirms, set status to "ready_for_sourcing"
-5. Reply STRICTLY in the same language as the user (${locale})
+5. Reply in the SAME LANGUAGE as the user's messages (detect from conversation history)
 6. Be friendly, professional, and conversational
 
 Response Format (MUST be valid JSON):
 {
   "status": "collecting" | "confirming" | "ready_for_sourcing",
-  "reply": "Your conversational reply to the user (in ${locale})",
+  "reply": "Your conversational reply to the user (in the same language as user)",
   "collected_info": {
     "product_name": "...",
     "vehicle_model": "...",
@@ -48,7 +48,8 @@ Response Format (MUST be valid JSON):
 }
 
 IMPORTANT:
-- Always respond in ${locale} language
+- Detect the user's language from their messages and reply in the same language
+- Support Chinese, English, French, German, Spanish, Japanese, etc.
 - Keep replies under 150 words
 - Be warm and helpful like a procurement specialist
 - When user says "yes", "ok", "confirmed" etc., mark status as "ready_for_sourcing"`;
@@ -66,8 +67,7 @@ function createDbClient() {
 
 // 调用百炼 Chat Completion API
 async function callBailianChat(
-  messages: Array<{ role: string; content: string }>,
-  locale: string
+  messages: Array<{ role: string; content: string }>
 ) {
   const response = await fetch(`${DASHSCOPE_BASE_URL}/chat/completions`, {
     method: 'POST',
@@ -78,7 +78,7 @@ async function callBailianChat(
     body: JSON.stringify({
       model: 'qwen-plus',
       messages: [
-        { role: 'system', content: GRACE_SYSTEM_PROMPT(locale) },
+        { role: 'system', content: GRACE_SYSTEM_PROMPT() },
         ...messages,
       ],
       response_format: {
@@ -184,7 +184,7 @@ export async function POST(request: NextRequest) {
     ];
 
     // 调用百炼 API
-    const aiContent = await callBailianChat(messages, locale);
+    const aiContent = await callBailianChat(messages);
     console.log(`[Grace] AI response:`, aiContent);
 
     // 解析响应
