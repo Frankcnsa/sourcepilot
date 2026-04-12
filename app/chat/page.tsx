@@ -146,7 +146,7 @@ export default function ChatPage() {
         const switchToFrank = shouldSwitchToFrank(userMessages, graceData.status);
         
         if (switchToFrank && graceData.status === 'ready_for_sourcing') {
-          // Grace 先说一句转交的话
+          // Grace 先说转交语
           const handoverMsg: Message = {
             id: (Date.now() + 1).toString(),
             role: 'assistant',
@@ -162,33 +162,46 @@ export default function ChatPage() {
             setConversationId(graceData.conversationId);
           }
           
-          // 调用 Frank 的 API
-          const frankResponse = await fetch('/api/chat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              messages: [...messages, userMessage, handoverMsg].map(m => ({
-                role: m.role,
-                content: m.content,
-              })),
-              sessionId,
-              role: 'frank',
-              collectedInfo: graceData.collectedInfo,
-            }),
-          });
-
-          const frankData = await frankResponse.json();
+          // 生成 Frank 的确认消息（基于收集的信息）
+          const collectedInfo = graceData.collectedInfo || {};
+          const hasChinese = /[\u4e00-\u9fa5]/.test(userMessage.content);
           
+          let frankReply: string;
+          if (hasChinese) {
+            frankReply = `好的，根据 Grace 的汇报，您的需求如下：\n\n` +
+              `• 产品：${collectedInfo.product_name || '待确认'}\n` +
+              `${collectedInfo.vehicle_model ? `• 适用车型：${collectedInfo.vehicle_model}\n` : ''}` +
+              `${collectedInfo.specifications ? `• 规格：${collectedInfo.specifications}\n` : ''}` +
+              `• 数量：${collectedInfo.quantity || '待确认'}\n` +
+              `${collectedInfo.budget ? `• 预算：${collectedInfo.budget}\n` : ''}` +
+              `${collectedInfo.delivery_time ? `• 交货期：${collectedInfo.delivery_time}\n` : ''}` +
+              `${collectedInfo.certifications ? `• 认证：${collectedInfo.certifications}\n` : ''}` +
+              `\n我现在为您组织安排《寻源需求分析报告》，报告将以邮件形式发送到您的邮箱，请注意查收。` +
+              `\n\n💰 本次报告收费：0 Credits\n\n请确认是否继续？`;
+          } else {
+            frankReply = `Got it! Based on Grace's summary, here are your requirements:\n\n` +
+              `• Product: ${collectedInfo.product_name || 'To be confirmed'}\n` +
+              `${collectedInfo.vehicle_model ? `• Vehicle Model: ${collectedInfo.vehicle_model}\n` : ''}` +
+              `${collectedInfo.specifications ? `• Specifications: ${collectedInfo.specifications}\n` : ''}` +
+              `• Quantity: ${collectedInfo.quantity || 'To be confirmed'}\n` +
+              `${collectedInfo.budget ? `• Budget: ${collectedInfo.budget}\n` : ''}` +
+              `${collectedInfo.delivery_time ? `• Delivery Time: ${collectedInfo.delivery_time}\n` : ''}` +
+              `${collectedInfo.certifications ? `• Certifications: ${collectedInfo.certifications}\n` : ''}` +
+              `\nI'm now organizing your Sourcing Requirements Analysis Report. ` +
+              `The report will be sent to your email. Please check your inbox.` +
+              `\n\n💰 Cost: 0 Credits\n\nPlease confirm to proceed?`;
+          }
+          
+          // Frank 接管消息
           const frankMsg: Message = {
             id: (Date.now() + 2).toString(),
             role: 'assistant',
             sender: 'frank',
-            content: frankData.response || frankData.choices?.[0]?.message?.content || 'Let me search for suppliers based on your requirements.',
+            content: frankReply,
             timestamp: new Date(),
           };
           
           setMessages(prev => [...prev, frankMsg]);
-          if (frankData.sessionId) setSessionId(frankData.sessionId);
           
         } else {
           // Grace 继续回复
