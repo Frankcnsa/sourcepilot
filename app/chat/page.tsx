@@ -1,105 +1,70 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, User, Bot, Paperclip, Image as ImageIcon, Menu } from 'lucide-react';
+import { Send, User, Paperclip, Image as ImageIcon, Menu, X, FileText } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 
 interface Message {
   id: string;
   role: 'user' | 'assistant';
+  sender?: 'frank' | 'grace';
   content: string;
+  image?: string;
+  pdf?: { name: string; data: string };
   timestamp: Date;
 }
-
-// Frank 的开场白
-const FRANK_OPENING = `Hi boss? This is Frank, your sourcepilot today. How can I help?
-I can speak : English, Español, Français, Русский, Afrikaans, عربي`;
 
 export default function ChatPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      role: 'assistant',
-      content: FRANK_OPENING,
-      timestamp: new Date(),
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string>('');
-  const [initialProcessed, setInitialProcessed] = useState(false);
+  const [graceThreadId, setGraceThreadId] = useState<string>('');
+  const [graceCollectedInfo, setGraceCollectedInfo] = useState<Record<string, string>>({});
+  const [pendingImage, setPendingImage] = useState<string | null>(null);
+  const [pendingPdf, setPendingPdf] = useState<{ name: string; data: string } | null>(null);
+  const [activeRole, setActiveRole] = useState<'grace' | 'frank'>('grace');
+  const [conversationId, setConversationId] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
-  // 生成或获取 session ID
-  useEffect(() => {
-    const stored = localStorage.getItem('sourcepilot_session_id');
-    if (stored) {
-      setSessionId(stored);
-      // 加载历史对话
-      loadConversationHistory(stored);
-    } else {
-      const newSessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      localStorage.setItem('sourcepilot_session_id', newSessionId);
-      setSessionId(newSessionId);
-    }
-  }, []);
-
-  // 检测移动端
-  useEffect(() => {
-    const checkMobile = () => {
-      const mobile = window.innerWidth < 768;
-      setIsMobile(mobile);
-      if (!mobile) {
-        setSidebarOpen(true);
-      }
-    };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  // 加载对话历史
-  const loadConversationHistory = async (sid: string) => {
-    try {
-      const response = await fetch(`/api/chat?sessionId=${sid}`);
-      if (response.ok) {
-        const data = await response.json();
-        if (data.messages && data.messages.length > 0) {
-          // 有历史记录，显示历史
-          const historyMessages: Message[] = data.messages.map((m: any) => ({
-            id: m.id,
-            role: m.role,
-            content: m.content,
-            timestamp: new Date(m.created_at),
-          }));
-          setMessages(historyMessages);
-        }
-        // 如果没有历史记录，保持 Frank 的开场白
-      }
-    } catch (error) {
-      console.error('Failed to load history:', error);
-    }
+  // 获取当前语言（简化版，后续接入 i18n）
+  const getCurrentLocale = () => {
+    // 暂时默认英文，后续从 i18n context 获取
+    return 'en';
   };
 
-  // 处理从首页跳转过来的 initial 消息
+  // 开场白
   useEffect(() => {
-    if (initialProcessed) return;
-    
-    const params = new URLSearchParams(window.location.search);
-    const initialMessage = params.get('initial');
-    
-    if (initialMessage) {
-      setInitialProcessed(true);
-      const decodedMessage = decodeURIComponent(initialMessage);
-      // 发送用户消息
-      handleSendMessage(decodedMessage);
-      // 清除 URL 参数
-      window.history.replaceState({}, '', '/chat');
+    if (messages.length === 0) {
+      // Frank 开场
+      const frankMsg: Message = {
+        id: Date.now().toString(),
+        role: 'assistant',
+        sender: 'frank',
+        content: "Hi there! I'm Frank, your sourcing consultant. This is my assistant Grace, she'll help you organize your requirements first.\n\nGrace, say hi to the boss!",
+        timestamp: new Date(),
+      };
+      setMessages([frankMsg]);
+      
+      // 1秒后 Grace 打招呼
+      setTimeout(() => {
+        const graceMsg: Message = {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          sender: 'grace',
+          content: "Hi boss! I'm Grace, Frank's assistant～ 😊\n\nI'll help you organize your sourcing requirements. Tell me:\n• What product are you looking for?\n• What's the approximate quantity?\n• Any special requirements?\n\nI'll take notes and report to Frank!",
+          timestamp: new Date(),
+        };
+        setMessages(prev => [...prev, graceMsg]);
+      }, 1000);
     }
-  }, [initialProcessed, sessionId]);
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -109,186 +74,321 @@ export default function ChatPage() {
     scrollToBottom();
   }, [messages]);
 
-  const handleSendMessage = async (content: string) => {
-    if (!content.trim() || !sessionId) return;
+  // 检测是否应该切换给 Frank
+  const shouldSwitchToFrank = (userMessages: Message[], graceStatus?: string): boolean => {
+    // 如果 Grace 返回 ready_for_sourcing，切换到 Frank
+    if (graceStatus === 'ready_for_sourcing') return true;
+    
+    // 简单逻辑：3轮对话后，或用户明确说"report"、"frank"等
+    const count = userMessages.length;
+    const lastMessage = userMessages[userMessages.length - 1]?.content.toLowerCase() || '';
+    return count >= 3 || lastMessage.includes('report') || lastMessage.includes('frank') || lastMessage.includes('generate');
+  };
+
+  const handleSend = async () => {
+    if (!inputValue.trim() && !pendingImage && !pendingPdf) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
-      content: content,
+      content: inputValue,
+      image: pendingImage || undefined,
+      pdf: pendingPdf || undefined,
       timestamp: new Date(),
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    setMessages(prev => [...prev, userMessage]);
     setInputValue('');
+    setPendingImage(null);
+    setPendingPdf(null);
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          messages: [...messages, userMessage].map(m => ({
-            role: m.role,
-            content: m.content,
-          })),
-          sessionId,
-        }),
-      });
+      // 检查是否应该切换给 Frank
+      const userMessages = [...messages.filter(m => m.role === 'user'), userMessage];
+      
+      if (activeRole === 'grace') {
+        // 调用 Grace 的百炼 API
+        const graceResponse = await fetch('/api/grace/bailian', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: inputValue,
+            locale: getCurrentLocale(),
+            threadId: graceThreadId,
+            conversationId: conversationId || undefined,
+          }),
+        });
 
-      if (!response.ok) {
-        throw new Error('Failed to get response');
-      }
+        if (!graceResponse.ok) {
+          throw new Error('Grace API error');
+        }
 
-      const data = await response.json();
-      const assistantContent = data.choices?.[0]?.message?.content;
+        const graceData = await graceResponse.json();
+        
+        // 保存 threadId 用于后续对话
+        if (graceData.threadId) {
+          setGraceThreadId(graceData.threadId);
+        }
+        
+        // 保存收集到的信息
+        if (graceData.collectedInfo) {
+          setGraceCollectedInfo(graceData.collectedInfo);
+        }
+        
+        // 检查是否应该切换给 Frank
+        const switchToFrank = shouldSwitchToFrank(userMessages, graceData.status);
+        
+        if (switchToFrank && graceData.status === 'ready_for_sourcing') {
+          // Grace 先说一句转交的话
+          const handoverMsg: Message = {
+            id: (Date.now() + 1).toString(),
+            role: 'assistant',
+            sender: 'grace',
+            content: graceData.reply || "Boss, I've got all your requirements! Let me get Frank for professional sourcing advice.",
+            timestamp: new Date(),
+          };
+          setMessages(prev => [...prev, handoverMsg]);
+          setActiveRole('frank');
+          
+          // 保存 conversationId
+          if (graceData.conversationId) {
+            setConversationId(graceData.conversationId);
+          }
+          
+          // 调用 Frank 的 API
+          const frankResponse = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              messages: [...messages, userMessage, handoverMsg].map(m => ({
+                role: m.role,
+                content: m.content,
+              })),
+              sessionId,
+              role: 'frank',
+              collectedInfo: graceData.collectedInfo,
+            }),
+          });
 
-      if (assistantContent) {
-        const assistantMessage: Message = {
-          id: (Date.now() + 1).toString(),
+          const frankData = await frankResponse.json();
+          
+          const frankMsg: Message = {
+            id: (Date.now() + 2).toString(),
+            role: 'assistant',
+            sender: 'frank',
+            content: frankData.response || frankData.choices?.[0]?.message?.content || 'Let me search for suppliers based on your requirements.',
+            timestamp: new Date(),
+          };
+          
+          setMessages(prev => [...prev, frankMsg]);
+          if (frankData.sessionId) setSessionId(frankData.sessionId);
+          
+        } else {
+          // Grace 继续回复
+          const graceMsg: Message = {
+            id: (Date.now() + 2).toString(),
+            role: 'assistant',
+            sender: 'grace',
+            content: graceData.reply || 'I see. Tell me more about your requirements.',
+            timestamp: new Date(),
+          };
+          
+          setMessages(prev => [...prev, graceMsg]);
+          
+          // 保存 conversationId
+          if (graceData.conversationId) {
+            setConversationId(graceData.conversationId);
+          }
+        }
+        
+      } else {
+        // Frank 模式，调用原有 API
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messages: [...messages, userMessage].map(m => ({
+              role: m.role,
+              content: m.content,
+            })),
+            sessionId,
+            role: 'frank',
+          }),
+        });
+
+        const data = await response.json();
+        
+        const aiMessage: Message = {
+          id: (Date.now() + 2).toString(),
           role: 'assistant',
-          content: assistantContent,
+          sender: 'frank',
+          content: data.response || data.choices?.[0]?.message?.content || 'Sorry, I could not process that.',
           timestamp: new Date(),
         };
-        setMessages((prev) => [...prev, assistantMessage]);
+
+        setMessages(prev => [...prev, aiMessage]);
+        if (data.sessionId) setSessionId(data.sessionId);
       }
+      
     } catch (error) {
       console.error('Chat error:', error);
-      // 显示错误消息
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
+      const errorMsg: Message = {
+        id: (Date.now() + 2).toString(),
         role: 'assistant',
-        content: "Sorry, I'm having trouble connecting. Please try again in a moment.",
+        sender: activeRole,
+        content: 'Sorry, something went wrong. Please try again.',
         timestamp: new Date(),
       };
-      setMessages((prev) => [...prev, errorMessage]);
+      setMessages(prev => [...prev, errorMsg]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSend = async () => {
-    await handleSendMessage(inputValue);
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
-
   const handleNewChat = () => {
-    // 生成新会话
-    const newSessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    localStorage.setItem('sourcepilot_session_id', newSessionId);
-    setSessionId(newSessionId);
-    // 重置消息为 Frank 的开场白
-    setMessages([
-      {
-        id: '1',
+    setMessages([]);
+    setSessionId('');
+    setGraceThreadId('');
+    setGraceCollectedInfo({});
+    setConversationId('');
+    setActiveRole('grace');
+    // 重新触发开场白
+    setTimeout(() => {
+      const frankMsg: Message = {
+        id: Date.now().toString(),
         role: 'assistant',
-        content: FRANK_OPENING,
+        sender: 'frank',
+        content: "Hi there! I'm Frank, your sourcing consultant. This is my assistant Grace, she'll help you organize your requirements first.\n\nGrace, say hi to the boss!",
         timestamp: new Date(),
-      },
-    ]);
+      };
+      setMessages([frankMsg]);
+      setTimeout(() => {
+        const graceMsg: Message = {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          sender: 'grace',
+          content: "Hi boss! I'm Grace, Frank's assistant～ 😊\n\nI'll help you organize your sourcing requirements. Tell me:\n• What product are you looking for?\n• What's the approximate quantity?\n• Any special requirements?\n\nI'll take notes and report to Frank!",
+          timestamp: new Date(),
+        };
+        setMessages(prev => [...prev, graceMsg]);
+      }, 1000);
+    }, 100);
+  };
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image size should be less than 5MB');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setPendingImage(event.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.type !== 'application/pdf') {
+      alert('Please select a PDF file');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      alert('PDF size should be less than 10MB');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setPendingPdf({ name: file.name, data: event.target?.result as string });
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
   };
 
   return (
     <div className="flex h-screen bg-white overflow-hidden">
-      {/* 侧边栏 */}
-      <Sidebar 
-        isOpen={sidebarOpen} 
-        onClose={() => setSidebarOpen(false)}
-        isMobile={isMobile}
-        onNewChat={handleNewChat}
-      />
-
-      {/* 遮罩层 */}
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} isMobile={isMobile} onNewChat={handleNewChat} />
+      
       {sidebarOpen && isMobile && (
-        <div
-          className="fixed inset-0 bg-black/30 z-40 md:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
+        <div className="fixed inset-0 bg-black/30 z-40 md:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
-      {/* 主内容区 */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* 顶部导航 */}
         <div className="flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 border-b border-gray-100">
           <div className="flex items-center gap-2">
-            <button 
-              onClick={() => setSidebarOpen(true)}
-              className="p-1.5 -ml-1.5 hover:bg-gray-100 rounded-lg"
-            >
+            <button onClick={() => setSidebarOpen(true)} className="p-1.5 -ml-1.5 hover:bg-gray-100 rounded-lg">
               <Menu size={20} className="text-gray-600" />
             </button>
             <div className="w-6 h-6 sm:w-7 sm:h-7 relative">
-              <Image
-                src="/sourcepilot-icon.png"
-                alt="SourcePilot"
-                fill
-                className="object-contain"
-              />
+              <Image src="/sourcepilot-icon.png" alt="SourcePilot" fill className="object-contain" />
             </div>
             <span className="font-medium text-gray-800 text-sm hidden sm:inline">SourcePilot</span>
           </div>
-          <button className="px-3 sm:px-4 py-1.5 sm:py-2 text-sm text-[#4F6DF5] hover:bg-blue-50 rounded-xl transition-colors font-medium">
-            Log In
-          </button>
+          <Link href="/login" className="px-3 sm:px-4 py-1.5 sm:py-2 text-sm text-[#4F6DF5] hover:bg-blue-50 rounded-xl transition-colors font-medium">Log In</Link>
         </div>
 
-        {/* 消息列表 */}
         <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6">
           {messages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex gap-2.5 sm:gap-4 ${
-                message.role === 'user' ? 'flex-row-reverse' : 'flex-row'
-              }`}
-            >
-              {/* 头像 */}
-              <div className={`flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center ${
+            <div key={message.id} className={`flex gap-2.5 sm:gap-4 ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+              <div className={`flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center overflow-hidden ${
                 message.role === 'user' 
                   ? 'bg-gradient-to-br from-[#4F6DF5] to-[#7B5CF5]' 
-                  : 'bg-gradient-to-br from-gray-100 to-gray-200'
+                  : message.sender === 'frank'
+                    ? 'bg-[#E3F2FD]'
+                    : 'bg-[#FCE4EC]'
               }`}>
                 {message.role === 'user' ? (
                   <User size={14} className="text-white sm:w-4 sm:h-4" />
+                ) : message.sender === 'frank' ? (
+                  <Image src="/frank-avatar.png" alt="Frank" width={32} height={32} className="w-full h-full object-cover" />
                 ) : (
-                  <Bot size={14} className="text-gray-600 sm:w-4 sm:h-4" />
+                  <Image src="/grace-avatar.png" alt="Grace" width={32} height={32} className="w-full h-full object-cover" />
                 )}
               </div>
 
-              {/* 消息内容 */}
-              <div className={`flex-1 max-w-[85%] sm:max-w-[75%] ${
-                message.role === 'user' ? 'items-end' : 'items-start'
-              }`}>
+              <div className={`flex-1 max-w-[85%] sm:max-w-[75%] ${message.role === 'user' ? 'items-end' : 'items-start'}`}>
                 <div className={`inline-block px-3.5 sm:px-4 py-2.5 sm:py-3 text-[15px] leading-relaxed whitespace-pre-wrap ${
                   message.role === 'user'
                     ? 'bg-gradient-to-br from-[#4F6DF5] to-[#7B5CF5] text-white rounded-2xl rounded-tr-sm'
-                    : 'bg-gray-50 text-gray-700 rounded-2xl rounded-tl-sm border border-gray-100'
+                    : message.sender === 'frank'
+                      ? 'bg-[#E3F2FD] text-gray-700 rounded-2xl rounded-tl-sm border border-blue-100'
+                      : 'bg-[#FCE4EC] text-gray-700 rounded-2xl rounded-tl-sm border border-pink-100'
                 }`}>
                   {message.content}
+                  {message.image && (
+                    <div className="mt-2">
+                      <img src={message.image} alt="Uploaded" className="max-w-[200px] max-h-[150px] rounded-lg object-cover" />
+                    </div>
+                  )}
+                  {message.pdf && (
+                    <div className="mt-2 flex items-center gap-2 bg-white/20 px-3 py-2 rounded-lg">
+                      <FileText size={16} />
+                      <span className="text-sm truncate max-w-[150px]">{message.pdf.name}</span>
+                    </div>
+                  )}
                 </div>
-                <div className={`text-[11px] sm:text-xs text-gray-400 mt-1 ${
-                  message.role === 'user' ? 'text-right' : 'text-left'
-                }`}>
+                <div className={`text-[11px] sm:text-xs text-gray-400 mt-1 ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
                   {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </div>
               </div>
             </div>
           ))}
 
-          {/* Loading 状态 */}
           {isLoading && (
             <div className="flex gap-2.5 sm:gap-4">
-              <div className="flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                <Bot size={14} className="text-gray-600 sm:w-4 sm:h-4" />
+              <div className={`flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center overflow-hidden ${
+                activeRole === 'frank' ? 'bg-[#E3F2FD]' : 'bg-[#FCE4EC]'
+              }`}>
+                <Image src={activeRole === 'frank' ? '/frank-avatar.png' : '/grace-avatar.png'} alt={activeRole} width={32} height={32} className="w-full h-full object-cover" />
               </div>
-              <div className="bg-gray-50 px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-2xl rounded-tl-sm border border-gray-100">
+              <div className={`px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-2xl rounded-tl-sm border ${
+                activeRole === 'frank' ? 'bg-[#E3F2FD] border-blue-100' : 'bg-[#FCE4EC] border-pink-100'
+              }`}>
                 <div className="flex gap-1.5">
                   <div className="w-2 h-2 rounded-full bg-gray-300 animate-bounce" />
                   <div className="w-2 h-2 rounded-full bg-gray-300 animate-bounce [animation-delay:0.1s]" />
@@ -301,48 +401,49 @@ export default function ChatPage() {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* 底部输入区 */}
         <div className="border-t border-gray-100 bg-white px-3 sm:px-4 py-3 sm:py-4">
           <div className="max-w-3xl mx-auto">
-            {/* 输入框容器 */}
-            <div className="relative bg-gray-50 rounded-2xl border border-gray-200 focus-within:border-[#4F6DF5] focus-within:ring-1 focus-within:ring-[#4F6DF5]/20 transition-all">
-              {/* 输入框 */}
-              <textarea
+            {(pendingImage || pendingPdf) && (
+              <div className="flex gap-2 mb-2">
+                {pendingImage && (
+                  <div className="relative">
+                    <img src={pendingImage} alt="Pending" className="h-16 w-16 object-cover rounded-lg" />
+                    <button onClick={() => setPendingImage(null)} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">×</button>
+                  </div>
+                )}
+                {pendingPdf && (
+                  <div className="relative bg-gray-100 px-3 py-2 rounded-lg flex items-center gap-2">
+                    <FileText size={16} />
+                    <span className="text-sm truncate max-w-[150px]">{pendingPdf.name}</span>
+                    <button onClick={() => setPendingPdf(null)} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">×</button>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            <div className="flex gap-2 sm:gap-3">
+              <button onClick={() => imageInputRef.current?.click()} className="p-2 sm:p-2.5 hover:bg-gray-100 rounded-xl text-gray-400 hover:text-gray-600 transition-colors">
+                <ImageIcon size={20} className="sm:w-5 sm:h-5" />
+              </button>
+              <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
+              
+              <button onClick={() => fileInputRef.current?.click()} className="p-2 sm:p-2.5 hover:bg-gray-100 rounded-xl text-gray-400 hover:text-gray-600 transition-colors">
+                <Paperclip size={20} className="sm:w-5 sm:h-5" />
+              </button>
+              <input ref={fileInputRef} type="file" accept="application/pdf" className="hidden" onChange={handleFileSelect} />
+              
+              <input
+                type="text"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="How can I help you, Boss?"
-                className="w-full bg-transparent px-3 sm:px-4 py-3 sm:py-3.5 pr-12 sm:pr-14 text-[15px] text-gray-700 placeholder-gray-400 resize-none outline-none min-h-[48px] max-h-[120px]"
-                rows={1}
-                disabled={isLoading}
+                onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                placeholder="Type your message..."
+                className="flex-1 bg-gray-50 border-0 rounded-xl px-4 py-2.5 sm:py-3 text-[15px] focus:outline-none focus:ring-2 focus:ring-[#4F6DF5]/20"
               />
               
-              {/* 右侧按钮组 */}
-              <div className="absolute right-2 sm:right-3 bottom-2 sm:bottom-2.5 flex items-center gap-1.5 sm:gap-2">
-                {/* 附件按钮 */}
-                <button className="p-1.5 sm:p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-colors">
-                  <Paperclip size={18} className="sm:w-5 sm:h-5" />
-                </button>
-                {/* 图片按钮 */}
-                <button className="p-1.5 sm:p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-colors">
-                  <ImageIcon size={18} className="sm:w-5 sm:h-5" />
-                </button>
-                {/* 发送按钮 */}
-                <button
-                  onClick={handleSend}
-                  disabled={!inputValue.trim() || isLoading}
-                  className="p-1.5 sm:p-2 bg-gradient-to-r from-[#4F6DF5] to-[#7B5CF5] text-white rounded-xl hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                >
-                  <Send size={18} className="sm:w-5 sm:h-5" />
-                </button>
-              </div>
-            </div>
-
-            {/* 底部提示 */}
-            <div className="text-center mt-2 sm:mt-3">
-              <p className="text-[11px] sm:text-xs text-gray-400">
-                AI can make mistakes. Please verify important information.
-              </p>
+              <button onClick={handleSend} disabled={isLoading} className="p-2.5 sm:p-3 bg-gradient-to-br from-[#4F6DF5] to-[#7B5CF5] text-white rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50">
+                <Send size={20} className="sm:w-5 sm:h-5" />
+              </button>
             </div>
           </div>
         </div>
