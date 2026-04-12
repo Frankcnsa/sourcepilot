@@ -42,7 +42,6 @@ export default function ChatPage() {
   const [conversationId, setConversationId] = useState<string>('');
   const [user, setUser] = useState<any>(null);
   const [awaitingDestination, setAwaitingDestination] = useState(false);
-  const [userLanguage, setUserLanguage] = useState<'zh' | 'en'>('en'); // 记住用户的语言偏好
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -63,24 +62,25 @@ export default function ChatPage() {
     checkUser();
   }, []);
 
-  // 获取当前语言（首次检测后记住，不再变化）
+  // 获取当前语言（根据当前消息实时检测，用户可能混用多语言）
   const getCurrentLocale = () => {
-    // 如果已经有语言偏好，直接使用
-    if (userLanguage) return userLanguage;
-    
-    // 首次检测：根据最后一条用户消息
     const lastUserMessage = messages
       .filter(m => m.role === 'user')
       .pop()?.content || '';
+    
+    // 检测中文字符
     const hasChinese = /[\u4e00-\u9fa5]/.test(lastUserMessage);
-    const detectedLang = hasChinese ? 'zh' : 'en';
     
-    // 记住语言偏好
-    if (lastUserMessage) {
-      setUserLanguage(detectedLang);
-    }
+    // 检测阿拉伯语
+    const hasArabic = /[\u0600-\u06FF]/.test(lastUserMessage);
     
-    return detectedLang;
+    // 检测俄语/西里尔字母
+    const hasRussian = /[\u0400-\u04FF]/.test(lastUserMessage);
+    
+    if (hasChinese) return 'zh';
+    if (hasArabic) return 'ar';
+    if (hasRussian) return 'ru';
+    return 'en';
   };
 
   // 开场白
@@ -389,7 +389,6 @@ export default function ChatPage() {
     setConversationId('');
     setActiveRole('grace');
     setAwaitingDestination(false);
-    setUserLanguage('en'); // 重置语言偏好
     
     setTimeout(() => {
       const frankMsg: Message = {
