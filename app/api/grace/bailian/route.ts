@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient, type CookieOptions } from '@supabase/ssr';
-import { cookies } from 'next/headers';
 import { createClient as createServiceClient } from '@supabase/supabase-js';
 
 // 强制动态渲染
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-// 阿里云百炼 Assistant API 配置
+// 阿里云百炼 API 配置
 const DASHSCOPE_API_KEY = process.env.DASHSCOPE_API_KEY;
 const DASHSCOPE_BASE_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1';
 
@@ -55,7 +53,7 @@ IMPORTANT:
 - Be warm and helpful like a procurement specialist
 - When user says "yes", "ok", "confirmed" etc., mark status as "ready_for_sourcing"`;
 
-// 创建数据库客户端（Service Role Key - 绕过 RLS）
+// 创建数据库客户端
 function createDbClient() {
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -66,132 +64,95 @@ function createDbClient() {
   );
 }
 
-// 创建或获取 Thread（百炼对话线程）
-async function getOrCreateThread(threadId?: string) {
-  if (threadId) {
-    // 验证 thread 是否存在
-    const response = await fetch(`${DASHSCOPE_BASE_URL}/threads/${threadId}`, {
-      headers: {
-        'Authorization': `Bearer ${DASHSCOPE_API_KEY}`,
-      },
-    });
-    
-    if (response.ok) {
-      return { id: threadId };
-    }
-  }
-  
-  // 创建新 thread
-  const response = await fetch(`${DASHSCOPE_BASE_URL}/threads`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${DASHSCOPE_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-  });
-  
-  if (!response.ok) {
-    throw new Error(`Failed to create thread: ${response.status}`);
-  }
-  
-  return await response.json();
-}
-
-// 在 Thread 中创建消息
-async function createMessage(threadId: string, role: string, content: string) {
-  const response = await fetch(`${DASHSCOPE_BASE_URL}/threads/${threadId}/messages`, {
+// 调用百炼 Chat Completion API
+async function callBailianChat(
+  messages: Array<{ role: string; content: string }>,
+  locale: string
+) {
+  const response = await fetch(`${DASHSCOPE_BASE_URL}/chat/completions`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${DASHSCOPE_API_KEY}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      role,
-      content,
-    }),
-  });
-  
-  if (!response.ok) {
-    throw new Error(`Failed to create message: ${response.status}`);
-  }
-  
-  return await response.json();
-}
-
-// 创建 Run（执行 Assistant）
-async function createRun(threadId: string, systemPrompt: string) {
-  const response = await fetch(`${DASHSCOPE_BASE_URL}/threads/${threadId}/runs`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${DASHSCOPE_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      assistant_id: null, // 使用临时 assistant
       model: 'qwen-plus',
-      instructions: systemPrompt,
+      messages: [
+        { role: 'system', content: GRACE_SYSTEM_PROMPT(locale) },
+        ...messages,
+      ],
       response_format: {
         type: 'json_object',
       },
+      temperature: 0.7,
+      max_tokens: 1000,
     }),
   });
-  
-  if (!response.ok) {
-    throw new Error(`Failed to create run: ${response.status}`);
-  }
-  
-  return await response.json();
-}
 
-// 等待 Run 完成
-async function waitForRun(threadId: string, runId: string, maxAttempts = 30): Promise<any> {
-  for (let i = 0; i < maxAttempts; i++) {
-    const response = await fetch(`${DASHSCOPE_BASE_URL}/threads/${threadId}/runs/${runId}`, {
-      headers: {
-        'Authorization': `Bearer ${DASHSCOPE_API_KEY}`,
-      },
-    });
-    
-    if (!response.ok) {
-      throw new Error(`Failed to get run status: ${response.status}`);
-    }
-    
-    const run = await response.json();
-    
-    if (run.status === 'completed') {
-      return run;
-    }
-    
-    if (run.status === 'failed' || run.status === 'cancelled' || run.status === 'expired') {
-      throw new Error(`Run ${run.status}: ${run.last_error?.message || 'Unknown error'}`);
-    }
-    
-    // 等待 1 秒后重试
-    await new Promise(resolve => setTimeout(resolve, 1000));
-  }
-  
-  throw new Error('Run timeout');
-}
-
-// 获取 Assistant 的回复消息
-async function getAssistantMessage(threadId: string) {
-  const response = await fetch(`${DASHSCOPE_BASE_URL}/threads/${threadId}/messages?limit=1&order=desc`, {
-    headers: {
-      'Authorization': `Bearer ${DASHSCOPE_API_KEY}`,
-    },
-  });
-  
   if (!response.ok) {
-    throw new Error(`Failed to get messages: ${response.status}`);
+    const errorText = await response.text();
+    console.error('[Grace] Bailian API error:', response.status, errorText);
+    throw new Error(`Bailian API error: ${response.status}`);
   }
-  
+
   const data = await response.json();
-  return data.data?.[0];
+  return data.choices?.[0]?.message?.content;
+}
+
+// 从数据库获取对话历史
+async function getConversationHistory(conversationId: string, db: any) {
+  if (!conversationId) return [];
+  
+  const { data, error } = await db
+    .from('chat_messages')
+    .select('*')
+    .eq('conversation_id', conversationId)
+    .eq('sender', 'grace')
+    .order('created_at', { ascending: true })
+    .limit(20);
+  
+  if (error) {
+    console.error('[Grace] Failed to get conversation history:', error);
+    return [];
+  }
+  
+  return data?.map((msg: any) => ({
+    role: msg.role,
+    content: msg.content,
+  })) || [];
+}
+
+// 解析 Grace 的 JSON 响应
+function parseGraceResponse(content: string): {
+  status: string;
+  reply: string;
+  collected_info: Record<string, string>;
+  missing_fields: string[];
+} {
+  try {
+    const parsed = JSON.parse(content);
+    return {
+      status: parsed.status || 'collecting',
+      reply: parsed.reply || parsed.content || 'I see. Tell me more about your requirements.',
+      collected_info: parsed.collected_info || {},
+      missing_fields: parsed.missing_fields || [],
+    };
+  } catch (e) {
+    console.error('[Grace] Failed to parse JSON response:', e);
+    // 如果解析失败，返回原始内容作为 reply
+    return {
+      status: 'collecting',
+      reply: content,
+      collected_info: {},
+      missing_fields: ['product_name'],
+    };
+  }
 }
 
 export async function POST(request: NextRequest) {
   try {
     if (!DASHSCOPE_API_KEY) {
+      console.error('[Grace] DASHSCOPE_API_KEY not configured');
       return NextResponse.json(
         { error: 'DashScope API not configured' },
         { status: 500 }
@@ -200,7 +161,7 @@ export async function POST(request: NextRequest) {
 
     // 解析请求体
     const body = await request.json();
-    const { message, locale = 'en', threadId, conversationId } = body;
+    const { message, locale = 'en', conversationId, threadId } = body;
 
     if (!message) {
       return NextResponse.json(
@@ -209,62 +170,51 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`[Grace] User message: ${message}, locale: ${locale}, threadId: ${threadId || 'new'}`);
+    console.log(`[Grace] User message: "${message}", locale: ${locale}`);
 
-    // 获取或创建 Thread
-    const thread = await getOrCreateThread(threadId);
-    console.log(`[Grace] Using thread: ${thread.id}`);
-
-    // 创建用户消息
-    await createMessage(thread.id, 'user', message);
-
-    // 创建 Run
-    const systemPrompt = GRACE_SYSTEM_PROMPT(locale);
-    const run = await createRun(thread.id, systemPrompt);
-    console.log(`[Grace] Run created: ${run.id}`);
-
-    // 等待 Run 完成
-    const completedRun = await waitForRun(thread.id, run.id);
-    console.log(`[Grace] Run completed`);
-
-    // 获取 Assistant 回复
-    const assistantMessage = await getAssistantMessage(thread.id);
+    // 构建消息历史
+    const db = createDbClient();
+    const history = conversationId 
+      ? await getConversationHistory(conversationId, db)
+      : [];
     
-    if (!assistantMessage) {
-      return NextResponse.json(
-        { error: 'No response from assistant' },
-        { status: 500 }
-      );
-    }
+    const messages = [
+      ...history,
+      { role: 'user', content: message },
+    ];
 
-    // 解析 JSON 响应
-    let parsedContent;
+    // 调用百炼 API
+    const aiContent = await callBailianChat(messages, locale);
+    console.log(`[Grace] AI response:`, aiContent);
+
+    // 解析响应
+    const parsedResponse = parseGraceResponse(aiContent);
+
+    // 保存消息到数据库
+    let savedConversationId = conversationId;
     try {
-      const content = assistantMessage.content?.[0]?.text?.value || assistantMessage.content;
-      parsedContent = JSON.parse(content);
-    } catch (e) {
-      console.error('[Grace] Failed to parse JSON response:', e);
-      console.log('[Grace] Raw content:', assistantMessage.content);
-      
-      // 如果解析失败，返回原始内容作为 reply
-      parsedContent = {
-        status: 'collecting',
-        reply: typeof assistantMessage.content === 'string' 
-          ? assistantMessage.content 
-          : assistantMessage.content?.[0]?.text?.value || 'I apologize, I did not understand. Could you please rephrase?',
-        collected_info: {},
-        missing_fields: ['product_name'],
-      };
-    }
-
-    // 保存消息到数据库（如果提供了 conversationId）
-    if (conversationId) {
-      try {
-        const db = createDbClient();
+      // 如果没有 conversationId，创建新的
+      if (!savedConversationId) {
+        const { data: convData, error: convError } = await db
+          .from('chat_conversations')
+          .insert({
+            title: `Sourcing: ${message.slice(0, 30)}...`,
+            status: 'active',
+          })
+          .select('id')
+          .single();
         
-        // 保存用户消息
+        if (convError) {
+          console.error('[Grace] Failed to create conversation:', convError);
+        } else {
+          savedConversationId = convData.id;
+        }
+      }
+
+      // 保存用户消息
+      if (savedConversationId) {
         await db.from('chat_messages').insert({
-          conversation_id: conversationId,
+          conversation_id: savedConversationId,
           role: 'user',
           content: message,
           sender: 'user',
@@ -273,36 +223,43 @@ export async function POST(request: NextRequest) {
         
         // 保存 Grace 回复
         await db.from('chat_messages').insert({
-          conversation_id: conversationId,
+          conversation_id: savedConversationId,
           role: 'assistant',
-          content: parsedContent.reply,
+          content: parsedResponse.reply,
           sender: 'grace',
           metadata: { 
-            status: parsedContent.status,
-            collected_info: parsedContent.collected_info,
-            missing_fields: parsedContent.missing_fields,
-            thread_id: thread.id,
+            status: parsedResponse.status,
+            collected_info: parsedResponse.collected_info,
+            missing_fields: parsedResponse.missing_fields,
           },
         });
-      } catch (dbError) {
-        console.error('[Grace] Failed to save to database:', dbError);
-        // 数据库错误不影响返回给前端
       }
+    } catch (dbError) {
+      console.error('[Grace] Failed to save to database:', dbError);
+      // 数据库错误不影响返回给前端
     }
 
     // 返回给前端
     return NextResponse.json({
-      threadId: thread.id,
-      reply: parsedContent.reply,
-      status: parsedContent.status,
-      collectedInfo: parsedContent.collected_info,
-      missingFields: parsedContent.missing_fields,
+      conversationId: savedConversationId,
+      threadId: threadId || savedConversationId, // 保持兼容
+      reply: parsedResponse.reply,
+      status: parsedResponse.status,
+      collectedInfo: parsedResponse.collected_info,
+      missingFields: parsedResponse.missing_fields,
     });
 
   } catch (error) {
     console.error('[Grace API Error]:', error);
     return NextResponse.json(
-      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
+      { 
+        error: 'Internal server error', 
+        details: error instanceof Error ? error.message : 'Unknown error',
+        reply: 'Sorry, something went wrong. Please try again.',
+        status: 'collecting',
+        collectedInfo: {},
+        missingFields: ['product_name'],
+      },
       { status: 500 }
     );
   }
@@ -319,30 +276,22 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const threadId = searchParams.get('threadId');
+    const conversationId = searchParams.get('conversationId');
 
-    if (!threadId) {
+    if (!conversationId) {
       return NextResponse.json(
-        { error: 'Thread ID is required' },
+        { error: 'Conversation ID is required' },
         { status: 400 }
       );
     }
 
-    const response = await fetch(`${DASHSCOPE_BASE_URL}/threads/${threadId}/messages`, {
-      headers: {
-        'Authorization': `Bearer ${DASHSCOPE_API_KEY}`,
-      },
+    const db = createDbClient();
+    const history = await getConversationHistory(conversationId, db);
+    
+    return NextResponse.json({ 
+      messages: history,
+      conversationId,
     });
-
-    if (!response.ok) {
-      return NextResponse.json(
-        { error: 'Failed to fetch thread messages' },
-        { status: response.status }
-      );
-    }
-
-    const data = await response.json();
-    return NextResponse.json({ messages: data.data || [] });
 
   } catch (error) {
     console.error('[Grace History Error]:', error);
