@@ -522,15 +522,27 @@ export default function ChatPage() {
                     <div className="flex items-center gap-2 mb-2">
                       {message.sender === 'frank' ? (
                         <>
-                          <div className="w-6 h-6 rounded-full bg-[#4F6DF5] flex items-center justify-center">
-                            <span className="text-xs text-white font-bold">F</span>
+                          <div className="w-7 h-7 rounded-full overflow-hidden bg-[#4F6DF5]">
+                            <Image 
+                              src="/frank-avatar.png" 
+                              alt="Frank" 
+                              width={28} 
+                              height={28}
+                              className="w-full h-full object-cover"
+                            />
                           </div>
                           <span className="text-xs font-medium text-[#4F6DF5]">Frank</span>
                         </>
                       ) : (
                         <>
-                          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center">
-                            <span className="text-xs text-white font-bold">G</span>
+                          <div className="w-7 h-7 rounded-full overflow-hidden bg-gradient-to-br from-pink-400 to-purple-500">
+                            <Image 
+                              src="/grace-avatar.png" 
+                              alt="Grace" 
+                              width={28} 
+                              height={28}
+                              className="w-full h-full object-cover"
+                            />
                           </div>
                           <span className="text-xs font-medium text-purple-600">Grace</span>
                         </>
