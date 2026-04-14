@@ -4,8 +4,8 @@ import { createClient } from '@supabase/supabase-js';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-const DASHSCOPE_API_KEY = process.env.DASHSCOPE_API_KEY;
-const DASHSCOPE_BASE_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1';
+const ONEBOUND_KEY = process.env.ONEBOUND_KEY;
+const ONEBOUND_SECRET = process.env.ONEBOUND_SECRET;
 
 // 创建 service role client
 function createServiceClient() {
@@ -15,99 +15,105 @@ function createServiceClient() {
   );
 }
 
-// 调用百炼搜索淘宝商品
-async function searchWithBailian(query: string, page: number = 1, pageSize: number = 20) {
+// 调用万邦 API 搜索 1688 商品
+async function search1688(query: string, page: number = 1, pageSize: number = 20) {
   const offset = (page - 1) * pageSize;
   
-  const response = await fetch(`${DASHSCOPE_BASE_URL}/chat/completions`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${DASHSCOPE_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'qwen-plus',
-      messages: [
-        {
-          role: 'system',
-          content: `You are a Taobao product search assistant. Search for products on Taobao and return structured data.
-Return results in this exact JSON format:
-{
-  "products": [
-    {
-      "id": "string (product id)",
-      "title": "string (translated product title)",
-      "originalTitle": "string (original Chinese title)",
-      "price": "string (price like '37.8')",
-      "originalPrice": "string (optional, original price before discount)",
-      "image": "string (product image URL)",
-      "shop": "string (shop name)",
-      "sales": "string (sales volume like '1000+' or '1万+')",
-      "link": "string (taobao product URL)",
-      "description": "string (brief product description)"
-    }
-  ],
-  "total": number,
-  "hasMore": boolean
-}
-
-Important:
-1. Search on Taobao (taobao.com or 1688.com)
-2. Translate all text to the user's language
-3. Return real, current product data
-4. If user searches in non-Chinese, translate to Chinese for search, then translate results back`
-        },
-        {
-          role: 'user',
-          content: `Search Taobao for "${query}" and return ${pageSize} results starting from offset ${offset}. Return valid JSON only.`
-        }
-      ],
-      extra_body: {
-        enable_search: true
-      },
-      temperature: 0.3,
-      max_tokens: 4000,
-      response_format: {
-        type: 'json_object'
-      }
-    }),
-  });
-
+  const url = `https://api-gw.onebound.cn/1688/item_search?key=${ONEBOUND_KEY}&secret=${ONEBOUND_SECRET}&q=${encodeURIComponent(query)}&page=${page}&start_price=0&end_price=0&page_size=${pageSize}`;
+  
+  const response = await fetch(url);
+  
   if (!response.ok) {
     const errorText = await response.text();
-    console.error('[Search API] Bailian error:', response.status, errorText);
-    throw new Error(`Bailian API error: ${response.status}`);
+    console.error('[Search API] 1688 error:', response.status, errorText);
+    throw new Error(`1688 API error: ${response.status}`);
   }
 
   const data = await response.json();
-  const content = data.choices?.[0]?.message?.content;
   
-  try {
-    const parsed = JSON.parse(content);
-    return {
-      products: parsed.products || [],
-      total: parsed.total || 0,
-      hasMore: parsed.hasMore ?? false
-    };
-  } catch (e) {
-    console.error('[Search API] Failed to parse JSON:', content);
-    throw new Error('Invalid response format from Bailian');
+  if (data.error_code !== '0000') {
+    console.error('[Search API] 1688 business error:', data);
+    throw new Error(`1688 API error: ${data.reason || 'Unknown'}`);
   }
+
+  // 转换数据格式
+  const items = data.items?.item || [];
+  const products = items.map((item: any) => ({
+    id: String(item.num_iid),
+    title: item.title,
+    originalTitle: item.title,
+    price: String(item.promotion_price || item.price || '0'),
+    originalPrice: item.price !== item.promotion_price ? String(item.price) : undefined,
+    image: item.pic_url,
+    shop: item.nick || '1688店铺',
+    sales: String(item.sales || '0'),
+    link: item.detail_url,
+    description: `${item.tag_percent || ''}`,
+    platform: '1688'
+  }));
+
+  return {
+    products,
+    total: parseInt(data.items?.total_results || '0'),
+    hasMore: products.length >= pageSize
+  };
+}
+
+// 调用万邦 API 搜索淘宝商品
+async function searchTaobao(query: string, page: number = 1, pageSize: number = 20) {
+  const url = `https://api-gw.onebound.cn/taobao/item_search?key=${ONEBOUND_KEY}&secret=${ONEBOUND_SECRET}&q=${encodeURIComponent(query)}&page=${page}&page_size=${pageSize}`;
+  
+  const response = await fetch(url);
+  
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('[Search API] Taobao error:', response.status, errorText);
+    throw new Error(`Taobao API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  
+  if (data.error_code !== '0000') {
+    console.error('[Search API] Taobao business error:', data);
+    throw new Error(`Taobao API error: ${data.reason || 'Unknown'}`);
+  }
+
+  // 转换数据格式
+  const items = data.items?.item || [];
+  const products = items.map((item: any) => ({
+    id: String(item.num_iid),
+    title: item.title,
+    originalTitle: item.title,
+    price: String(item.promotion_price || item.price || '0'),
+    originalPrice: item.price !== item.promotion_price ? String(item.price) : undefined,
+    image: item.pic_url,
+    shop: item.nick || item.seller || '淘宝店铺',
+    sales: String(item.sales || item.sale_num || '0'),
+    link: item.detail_url,
+    description: '',
+    platform: 'taobao'
+  }));
+
+  return {
+    products,
+    total: parseInt(data.items?.total_results || '0'),
+    hasMore: products.length >= pageSize
+  };
 }
 
 export async function POST(request: NextRequest) {
   try {
     // 检查 API Key
-    if (!DASHSCOPE_API_KEY) {
+    if (!ONEBOUND_KEY || !ONEBOUND_SECRET) {
       return NextResponse.json(
-        { error: 'DASHSCOPE_API_KEY not configured' },
+        { error: 'ONEBOUND_KEY or ONEBOUND_SECRET not configured' },
         { status: 500 }
       );
     }
 
     // 获取请求体
     const body = await request.json();
-    const { query, page = 1, pageSize = 20, userId } = body;
+    const { query, page = 1, pageSize = 20, userId, platform = 'all' } = body;
 
     if (!query || typeof query !== 'string') {
       return NextResponse.json(
@@ -116,10 +122,32 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`[Search API] Searching: "${query}", page: ${page}, pageSize: ${pageSize}`);
+    console.log(`[Search API] Searching: "${query}", page: ${page}, pageSize: ${pageSize}, platform: ${platform}`);
 
-    // 调用百炼搜索
-    const result = await searchWithBailian(query, page, pageSize);
+    let allProducts: any[] = [];
+    let total = 0;
+
+    // 搜索 1688
+    if (platform === 'all' || platform === '1688') {
+      try {
+        const result1688 = await search1688(query, page, pageSize / 2);
+        allProducts = [...allProducts, ...result1688.products];
+        total += result1688.total;
+      } catch (e) {
+        console.error('[Search API] 1688 search failed:', e);
+      }
+    }
+
+    // 搜索淘宝
+    if (platform === 'all' || platform === 'taobao') {
+      try {
+        const resultTaobao = await searchTaobao(query, page, pageSize / 2);
+        allProducts = [...allProducts, ...resultTaobao.products];
+        total += resultTaobao.total;
+      } catch (e) {
+        console.error('[Search API] Taobao search failed:', e);
+      }
+    }
 
     // 如果有用户ID，记录搜索历史
     if (userId) {
@@ -128,7 +156,7 @@ export async function POST(request: NextRequest) {
         await supabase.from('search_history').insert({
           user_id: userId,
           query,
-          results_count: result.products.length,
+          results_count: allProducts.length,
         });
       } catch (e) {
         console.error('[Search API] Failed to save history:', e);
@@ -140,7 +168,9 @@ export async function POST(request: NextRequest) {
       query,
       page,
       pageSize,
-      ...result
+      products: allProducts,
+      total,
+      hasMore: allProducts.length >= pageSize
     });
 
   } catch (error) {
