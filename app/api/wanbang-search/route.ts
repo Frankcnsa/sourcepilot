@@ -7,12 +7,6 @@ const ONEBOUND_API_SECRET = process.env.ONEBOUND_API_SECRET || '';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-// 简单的语言检测
-function detectLanguage(text: string): string {
-  if (/[\u4e00-\u9fa5]/.test(text)) return 'zh';
-  return 'en';
-}
-
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -37,53 +31,33 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`[Search] Query: "${query}", targetLang: ${targetLang}`);
-
-    // 检测语言，如果是英文先翻译成中文（万邦需要中文搜索词）
-    const detectedLang = detectLanguage(query);
-    let searchQuery = query;
-    
-    if (detectedLang !== 'zh') {
-      // 简单处理：phone case -> 手机壳（先用英文直接搜索试试）
-      // 万邦API其实支持英文搜索词
-      searchQuery = query;
-    }
+    console.log(`[Wanbang Search] Query: "${query}", Page: ${page}`);
 
     // 调用万邦API
     const params = new URLSearchParams({
       key: ONEBOUND_API_KEY,
       secret: ONEBOUND_API_SECRET,
       api_name: 'item_search',
-      q: searchQuery,
+      q: query,
       page: String(page),
       page_size: String(pageSize),
       sort: 'default'
     });
     
-    console.log(`[Search] Calling Wanbang API...`);
-    
     const response = await fetch(`${ONEBOUND_API_URL}?${params.toString()}`, {
       method: 'GET',
-      headers: { 'Accept': 'application/json' },
-      // 5秒超时
-      signal: AbortSignal.timeout(5000)
+      headers: { 'Accept': 'application/json' }
     });
-    
-    if (!response.ok) {
-      throw new Error(`Wanbang API error: ${response.status}`);
-    }
     
     const data = await response.json();
     
     if (data.error) {
-      console.error('[Search] Wanbang API error:', data.error);
+      console.error('[Wanbang Search] API error:', data.error);
       return NextResponse.json(
         { error: data.error },
         { status: 500 }
       );
     }
-    
-    console.log(`[Search] Got ${data.items?.item?.length || 0} results`);
     
     const items = data.items?.item || [];
     const products = items.map((item: any) => ({
@@ -103,17 +77,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       query,
-      searchQuery,
       page,
       pageSize,
       total: data.items?.total_results || products.length,
-      sourceLang: detectedLang,
       targetLang,
       products
     });
 
   } catch (error) {
-    console.error('[Search] Error:', error);
+    console.error('[Wanbang Search] Error:', error);
     return NextResponse.json(
       { 
         error: 'Search failed',
