@@ -45,9 +45,10 @@ const MOCK_PRODUCTS = [
 
 export async function POST(request: NextRequest) {
   console.log('[Search] Request received');
+  let body: any = {};
   
   try {
-    const body = await request.json();
+    body = await request.json();
     const { query, page = 1, pageSize = 20 } = body;
 
     if (!query || typeof query !== 'string') {
@@ -142,7 +143,7 @@ export async function POST(request: NextRequest) {
     // 出错时返回模拟数据
     return NextResponse.json({
       success: true,
-      query: 'phone case',
+      query: body?.query || 'phone case',
       source: 'mock-error-fallback',
       error: error.message,
       total: MOCK_PRODUCTS.length,
