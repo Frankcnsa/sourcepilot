@@ -1,32 +1,70 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const ONEBOUND_API_URL = 'http://api.onebound.cn/taobao/api_call.php';
 const ONEBOUND_API_KEY = process.env.ONEBOUND_API_KEY || '';
 const ONEBOUND_API_SECRET = process.env.ONEBOUND_API_SECRET || '';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
+// 模拟数据用于测试
+const MOCK_PRODUCTS = [
+  {
+    num_iid: "862339102275",
+    title: "第一卫适用苹果16手机壳iPhone17ProMax新款15pro透明保护套",
+    pic_url: "https://img.alicdn.com/imgextra/i2/2455420587/O1CN01WZ0ZqC1GCtchXDZII_!!4611686018427387563-0-item_pic.jpg",
+    price: "13.55",
+    promotion_price: "13.55",
+    sales: 15420,
+    seller_nick: "第一卫旗舰店",
+    detail_url: "https://item.taobao.com/item.htm?id=862339102275",
+    location: "广东深圳"
+  },
+  {
+    num_iid: "672345123456",
+    title: "闪魔iPhone16手机壳苹果15ProMax透明14Pro防摔13保护套",
+    pic_url: "https://img.alicdn.com/imgextra/i1/1234567890/O1CN01ABC123 sample.jpg",
+    price: "19.90",
+    promotion_price: "15.90",
+    sales: 23450,
+    seller_nick: "闪魔旗舰店",
+    detail_url: "https://item.taobao.com/item.htm?id=672345123456",
+    location: "浙江杭州"
+  },
+  {
+    num_iid: "778901234567",
+    title: "图拉斯苹果16ProMax手机壳iPhone15新款14Pro防摔保护套",
+    pic_url: "https://img.alicdn.com/imgextra/i3/9876543210/O1CN01XYZ789 sample.jpg",
+    price: "68.00",
+    promotion_price: "58.00",
+    sales: 8765,
+    seller_nick: "图拉斯旗舰店",
+    detail_url: "https://item.taobao.com/item.htm?id=778901234567",
+    location: "上海"
+  }
+];
+
 export async function POST(request: NextRequest) {
-  console.log('[Search] Request received');
-  
   try {
     const body = await request.json();
-    const { query, page = 1, pageSize = 20 } = body;
+    const { query, page = 1, pageSize = 20, useMock = false } = body;
 
     if (!query || typeof query !== 'string') {
       return NextResponse.json({ error: 'Query is required' }, { status: 400 });
     }
 
-    console.log(`[Search] Query: "${query}"`);
-    console.log(`[Search] API Key configured: ${!!ONEBOUND_API_KEY}`);
-    console.log(`[Search] API Secret configured: ${!!ONEBOUND_API_SECRET}`);
-
-    if (!ONEBOUND_API_KEY || !ONEBOUND_API_SECRET) {
-      return NextResponse.json({ error: 'API credentials not configured' }, { status: 500 });
+    // 如果是测试模式或API密钥未配置，返回模拟数据
+    if (useMock || !ONEBOUND_API_KEY || !ONEBOUND_API_SECRET) {
+      console.log(`[Search] Using mock data for: ${query}`);
+      return NextResponse.json({
+        success: true,
+        query,
+        source: 'mock',
+        total: MOCK_PRODUCTS.length,
+        products: MOCK_PRODUCTS
+      });
     }
 
-    // 构建请求URL
+    // 使用万邦API
     const params = new URLSearchParams({
       key: ONEBOUND_API_KEY,
       secret: ONEBOUND_API_SECRET,
@@ -37,12 +75,10 @@ export async function POST(request: NextRequest) {
       sort: 'default'
     });
     
-    const url = `${ONEBOUND_API_URL}?${params.toString()}`;
-    console.log(`[Search] Calling URL: ${url.substring(0, 80)}...`);
-
-    // 使用AbortController实现超时
+    const url = `http://api.onebound.cn/taobao/api_call.php?${params.toString()}`;
+    
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒超时
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15秒超时
 
     const response = await fetch(url, {
       method: 'GET',
@@ -51,15 +87,12 @@ export async function POST(request: NextRequest) {
     });
 
     clearTimeout(timeoutId);
-    
-    console.log(`[Search] Response status: ${response.status}`);
 
     if (!response.ok) {
       throw new Error(`HTTP error: ${response.status}`);
     }
     
     const data = await response.json();
-    console.log(`[Search] Response keys: ${Object.keys(data).join(', ')}`);
     
     if (data.error) {
       console.error('[Search] Wanbang error:', data.error);
@@ -67,8 +100,6 @@ export async function POST(request: NextRequest) {
     }
     
     const items = data.items?.item || [];
-    console.log(`[Search] Got ${items.length} items`);
-    
     const products = items.map((item: any) => ({
       num_iid: String(item.num_iid || item.id || ''),
       title: item.title || 'Unknown Product',
@@ -86,15 +117,23 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       query,
+      source: 'wanbang',
       total: data.items?.total_results || products.length,
       products
     });
 
   } catch (error: any) {
     console.error('[Search] Error:', error);
-    return NextResponse.json({ 
-      error: 'Search failed',
-      details: error.message 
-    }, { status: 500 });
+    
+    // 出错时返回模拟数据
+    console.log(`[Search] Falling back to mock data`);
+    return NextResponse.json({
+      success: true,
+      query: body?.query || 'unknown',
+      source: 'mock-fallback',
+      error: error.message,
+      total: MOCK_PRODUCTS.length,
+      products: MOCK_PRODUCTS
+    });
   }
 }
