@@ -1,6 +1,7 @@
 // 万邦API配置
 const ONEBOUND_API_URL = 'http://api.onebound.cn/taobao/api_call.php';
 const ONEBOUND_API_KEY = process.env.ONEBOUND_API_KEY || '';
+const ONEBOUND_API_SECRET = process.env.ONEBOUND_API_SECRET || '';
 
 // 商品数据结构
 export interface WanbangProduct {
@@ -23,13 +24,14 @@ export async function searchWanbang(
   page: number = 1,
   pageSize: number = 20
 ): Promise<{ products: WanbangProduct[]; total: number }> {
-  if (!ONEBOUND_API_KEY) {
-    throw new Error('ONEBOUND_API_KEY not configured');
+  if (!ONEBOUND_API_KEY || !ONEBOUND_API_SECRET) {
+    throw new Error('ONEBOUND_API_KEY or ONEBOUND_API_SECRET not configured');
   }
   
   try {
     const params = new URLSearchParams({
       key: ONEBOUND_API_KEY,
+      secret: ONEBOUND_API_SECRET,
       api_name: 'item_search',
       q: query,
       page: String(page),
@@ -82,13 +84,14 @@ export async function getWanbangDetail(
   props?: any[];
   images?: string[];
 }> {
-  if (!ONEBOUND_API_KEY) {
-    throw new Error('ONEBOUND_API_KEY not configured');
+  if (!ONEBOUND_API_KEY || !ONEBOUND_API_SECRET) {
+    throw new Error('ONEBOUND_API_KEY or ONEBOUND_API_SECRET not configured');
   }
   
   try {
     const params = new URLSearchParams({
       key: ONEBOUND_API_KEY,
+      secret: ONEBOUND_API_SECRET,
       api_name: 'item_get',
       num_iid: num_iid,
       is_promotion: '1'
