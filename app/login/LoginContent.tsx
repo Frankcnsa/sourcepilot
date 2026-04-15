@@ -31,7 +31,9 @@ export default function LoginContent() {
       if (error) {
         setError(error.message)
       } else {
-        router.push("/")
+        // 检查是否有重定向参数
+        const redirectTo = searchParams.get("redirect")
+        router.push(redirectTo || "/")
         router.refresh()
       }
     } catch {
