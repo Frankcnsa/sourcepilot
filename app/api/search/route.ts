@@ -7,85 +7,68 @@ const ONEBOUND_API_SECRET = process.env.ONEBOUND_API_SECRET || '';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-// 简单的语言检测
-function detectLanguage(text: string): string {
-  if (/[\u4e00-\u9fa5]/.test(text)) return 'zh';
-  return 'en';
-}
-
 export async function POST(request: NextRequest) {
+  console.log('[Search] Request received');
+  
   try {
     const body = await request.json();
-    const { 
-      query, 
-      page = 1, 
-      pageSize = 20,
-      targetLang = 'en'
-    } = body;
+    const { query, page = 1, pageSize = 20 } = body;
 
     if (!query || typeof query !== 'string') {
-      return NextResponse.json(
-        { error: 'Query is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Query is required' }, { status: 400 });
     }
+
+    console.log(`[Search] Query: "${query}"`);
+    console.log(`[Search] API Key configured: ${!!ONEBOUND_API_KEY}`);
+    console.log(`[Search] API Secret configured: ${!!ONEBOUND_API_SECRET}`);
 
     if (!ONEBOUND_API_KEY || !ONEBOUND_API_SECRET) {
-      return NextResponse.json(
-        { error: 'API credentials not configured' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'API credentials not configured' }, { status: 500 });
     }
 
-    console.log(`[Search] Query: "${query}", targetLang: ${targetLang}`);
-
-    // 检测语言，如果是英文先翻译成中文（万邦需要中文搜索词）
-    const detectedLang = detectLanguage(query);
-    let searchQuery = query;
-    
-    if (detectedLang !== 'zh') {
-      // 简单处理：phone case -> 手机壳（先用英文直接搜索试试）
-      // 万邦API其实支持英文搜索词
-      searchQuery = query;
-    }
-
-    // 调用万邦API
+    // 构建请求URL
     const params = new URLSearchParams({
       key: ONEBOUND_API_KEY,
       secret: ONEBOUND_API_SECRET,
       api_name: 'item_search',
-      q: searchQuery,
+      q: query,
       page: String(page),
       page_size: String(pageSize),
       sort: 'default'
     });
     
-    console.log(`[Search] Calling Wanbang API...`);
-    
-    const response = await fetch(`${ONEBOUND_API_URL}?${params.toString()}`, {
+    const url = `${ONEBOUND_API_URL}?${params.toString()}`;
+    console.log(`[Search] Calling URL: ${url.substring(0, 80)}...`);
+
+    // 使用AbortController实现超时
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒超时
+
+    const response = await fetch(url, {
       method: 'GET',
       headers: { 'Accept': 'application/json' },
-      // 5秒超时
-      signal: AbortSignal.timeout(5000)
+      signal: controller.signal
     });
+
+    clearTimeout(timeoutId);
     
+    console.log(`[Search] Response status: ${response.status}`);
+
     if (!response.ok) {
-      throw new Error(`Wanbang API error: ${response.status}`);
+      throw new Error(`HTTP error: ${response.status}`);
     }
     
     const data = await response.json();
+    console.log(`[Search] Response keys: ${Object.keys(data).join(', ')}`);
     
     if (data.error) {
-      console.error('[Search] Wanbang API error:', data.error);
-      return NextResponse.json(
-        { error: data.error },
-        { status: 500 }
-      );
+      console.error('[Search] Wanbang error:', data.error);
+      return NextResponse.json({ error: data.error }, { status: 500 });
     }
     
-    console.log(`[Search] Got ${data.items?.item?.length || 0} results`);
-    
     const items = data.items?.item || [];
+    console.log(`[Search] Got ${items.length} items`);
+    
     const products = items.map((item: any) => ({
       num_iid: String(item.num_iid || item.id || ''),
       title: item.title || 'Unknown Product',
@@ -103,23 +86,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       query,
-      searchQuery,
-      page,
-      pageSize,
       total: data.items?.total_results || products.length,
-      sourceLang: detectedLang,
-      targetLang,
       products
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('[Search] Error:', error);
-    return NextResponse.json(
-      { 
-        error: 'Search failed',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
-    );
+    return NextResponse.json({ 
+      error: 'Search failed',
+      details: error.message 
+    }, { status: 500 });
   }
 }
