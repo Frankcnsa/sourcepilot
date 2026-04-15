@@ -4,18 +4,14 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export async function GET(request: NextRequest) {
-  const envCheck = {
-    hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-    hasSupabaseKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    hasOneboundKey: !!process.env.ONEBOUND_API_KEY,
-    hasOneboundSecret: !!process.env.ONEBOUND_API_SECRET,
-    oneboundKeyLength: process.env.ONEBOUND_API_KEY?.length || 0,
-    oneboundSecretLength: process.env.ONEBOUND_API_SECRET?.length || 0,
-  };
+  const ONEBOUND_API_KEY = process.env.ONEBOUND_API_KEY || '';
+  const ONEBOUND_API_SECRET = process.env.ONEBOUND_API_SECRET || '';
 
   return NextResponse.json({
-    success: true,
-    envCheck,
+    hasKey: !!ONEBOUND_API_KEY,
+    hasSecret: !!ONEBOUND_API_SECRET,
+    keyLength: ONEBOUND_API_KEY.length,
+    secretLength: ONEBOUND_API_SECRET.length,
     timestamp: new Date().toISOString()
   });
 }
