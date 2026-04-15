@@ -1,59 +1,96 @@
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'crypto';
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+const DATAOKE_APP_KEY = process.env.DATAOKE_APP_KEY || '69dd9a4187317';
+const DATAOKE_APP_SECRET = process.env.DATAOKE_APP_SECRET || '1e13c6ff3546d62dcb1974512fe3f012';
+const DATAOKE_BASE_URL = 'https://openapi.dataoke.com';
 
-// 阿里云FC中转服务地址
-const DATAOKE_PROXY_URL = 'https://dataoke-proxy-tlkpqnacev.cn-shanghai.fcapp.run';
+// 生成大淘客签名
+function generateDataokeSign(params: Record<string, string>, appSecret: string): string {
+  const filteredParams: Record<string, string> = {};
+  
+  for (const [key, value] of Object.entries(params)) {
+    if (key !== 'sign' && value !== undefined && value !== null && value !== '') {
+      filteredParams[key] = String(value);
+    }
+  }
+  
+  const sortedKeys = Object.keys(filteredParams).sort();
+  let signStr = appSecret;
+  
+  for (const key of sortedKeys) {
+    signStr += key + filteredParams[key];
+  }
+  signStr += appSecret;
+  
+  return crypto.createHash('md5').update(signStr).digest('hex');
+}
 
+// 转链接口
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { url } = body;
-
-    if (!url || typeof url !== 'string') {
+    const { goodsId, itemId, pid } = body;
+    
+    if (!goodsId && !itemId) {
       return NextResponse.json(
-        { error: 'URL is required' },
+        { error: 'goodsId or itemId is required' },
         { status: 400 }
       );
     }
-
-    console.log(`[Convert Link] Converting URL: ${url}`);
-
-    // 调用阿里云FC中转服务（高效转链）
-    const response = await fetch(`${DATAOKE_PROXY_URL}/convert-link`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url }),
+    
+    const targetId = goodsId || itemId;
+    const targetPid = pid || 'mm_123_456_789'; // 默认PID，应该配置到环境变量
+    
+    console.log(`[Dataoke Convert] goodsId: ${targetId}, pid: ${targetPid}`);
+    
+    // 构建参数
+    const params: Record<string, string> = {
+      appKey: DATAOKE_APP_KEY,
+      version: 'v1.3.1',
+      goodsId: targetId,
+      pid: targetPid
+    };
+    
+    params.sign = generateDataokeSign(params, DATAOKE_APP_SECRET);
+    
+    const queryStr = new URLSearchParams(params).toString();
+    const url = `${DATAOKE_BASE_URL}/api/tb-service/get-privilege-link?${queryStr}`;
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' }
     });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('[Convert Link] Error:', response.status, errorText);
-      // 如果转链失败，返回原始链接
-      return NextResponse.json({
-        success: false,
-        link: url,
-        error: `Convert failed: ${response.status}`
-      });
-    }
-
+    
     const data = await response.json();
-
+    
+    if (data.code !== 0) {
+      console.error('[Dataoke Convert] API error:', data);
+      return NextResponse.json(
+        { error: data.msg || 'Convert failed', code: data.code },
+        { status: 500 }
+      );
+    }
+    
+    const result = data.data || {};
+    
     return NextResponse.json({
-      success: data.success || true,
-      link: data.link || data.shortLink || data.tpwd || data.clickUrl || url,
-      originalUrl: url,
-      ...(data.couponInfo && { couponInfo: data.couponInfo }),
+      success: true,
+      shortUrl: result.shortUrl,
+      longUrl: result.longUrl,
+      tpwd: result.tpwd, // 淘口令
+      couponInfo: result.couponInfo,
+      couponClickUrl: result.couponClickUrl
     });
-
+    
   } catch (error) {
-    console.error('[Convert Link] Error:', error);
-    // 出错时返回原始链接，不影响用户体验
-    return NextResponse.json({
-      success: false,
-      link: request.json().then(b => b.url).catch(() => ''),
-      error: error instanceof Error ? error.message : 'Unknown error'
-    });
+    console.error('[Dataoke Convert] Error:', error);
+    return NextResponse.json(
+      { error: 'Convert failed', details: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 }
+    );
   }
 }
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
