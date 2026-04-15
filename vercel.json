@@ -1,18 +1,16 @@
 {
-  "framework": "nextjs",
-  "buildCommand": "npm run build",
-  "devCommand": "npm run dev",
-  "installCommand": "npm install",
-  "regions": ["iad1"],
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=0, must-revalidate"
-        }
-      ]
+  "functions": {
+    "app/api/search/route.ts": {
+      "maxDuration": 30
+    },
+    "app/api/product-detail/route.ts": {
+      "maxDuration": 30
+    },
+    "app/api/wanbang-search/route.ts": {
+      "maxDuration": 30
+    },
+    "app/api/wanbang-detail/route.ts": {
+      "maxDuration": 30
     }
-  ]
+  }
 }
