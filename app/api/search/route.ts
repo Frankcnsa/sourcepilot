@@ -22,7 +22,7 @@ const MOCK_PRODUCTS = [
   {
     num_iid: "672345123456",
     title: "闪魔iPhone16手机壳苹果15ProMax透明14Pro防摔13保护套",
-    pic_url: "https://img.alicdn.com/imgextra/i1/1234567890/O1CN01ABC123 sample.jpg",
+    pic_url: "https://img.alicdn.com/imgextra/i1/1234567890/O1CN01ABC123_sample.jpg",
     price: "19.90",
     promotion_price: "15.90",
     sales: 23450,
@@ -33,7 +33,7 @@ const MOCK_PRODUCTS = [
   {
     num_iid: "778901234567",
     title: "图拉斯苹果16ProMax手机壳iPhone15新款14Pro防摔保护套",
-    pic_url: "https://img.alicdn.com/imgextra/i3/9876543210/O1CN01XYZ789 sample.jpg",
+    pic_url: "https://img.alicdn.com/imgextra/i3/9876543210/O1CN01XYZ789_sample.jpg",
     price: "68.00",
     promotion_price: "58.00",
     sales: 8765,
@@ -44,17 +44,22 @@ const MOCK_PRODUCTS = [
 ];
 
 export async function POST(request: NextRequest) {
+  console.log('[Search] Request received');
+  
   try {
     const body = await request.json();
-    const { query, page = 1, pageSize = 20, useMock = false } = body;
+    const { query, page = 1, pageSize = 20 } = body;
 
     if (!query || typeof query !== 'string') {
       return NextResponse.json({ error: 'Query is required' }, { status: 400 });
     }
 
-    // 如果是测试模式或API密钥未配置，返回模拟数据
-    if (useMock || !ONEBOUND_API_KEY || !ONEBOUND_API_SECRET) {
-      console.log(`[Search] Using mock data for: ${query}`);
+    console.log(`[Search] Query: "${query}"`);
+    console.log(`[Search] API Key configured: ${!!ONEBOUND_API_KEY}`);
+
+    // 如果API密钥未配置，返回模拟数据
+    if (!ONEBOUND_API_KEY || !ONEBOUND_API_SECRET) {
+      console.log(`[Search] Using mock data (no API credentials)`);
       return NextResponse.json({
         success: true,
         query,
@@ -76,9 +81,10 @@ export async function POST(request: NextRequest) {
     });
     
     const url = `http://api.onebound.cn/taobao/api_call.php?${params.toString()}`;
-    
+    console.log(`[Search] Calling Wanbang API...`);
+
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15秒超时
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
 
     const response = await fetch(url, {
       method: 'GET',
@@ -96,7 +102,15 @@ export async function POST(request: NextRequest) {
     
     if (data.error) {
       console.error('[Search] Wanbang error:', data.error);
-      return NextResponse.json({ error: data.error }, { status: 500 });
+      // 出错时返回模拟数据
+      return NextResponse.json({
+        success: true,
+        query,
+        source: 'mock-fallback',
+        wanbangError: data.error,
+        total: MOCK_PRODUCTS.length,
+        products: MOCK_PRODUCTS
+      });
     }
     
     const items = data.items?.item || [];
@@ -123,14 +137,13 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error('[Search] Error:', error);
+    console.error('[Search] Error:', error.message);
     
     // 出错时返回模拟数据
-    console.log(`[Search] Falling back to mock data`);
     return NextResponse.json({
       success: true,
-      query: body?.query || 'unknown',
-      source: 'mock-fallback',
+      query: 'phone case',
+      source: 'mock-error-fallback',
       error: error.message,
       total: MOCK_PRODUCTS.length,
       products: MOCK_PRODUCTS
