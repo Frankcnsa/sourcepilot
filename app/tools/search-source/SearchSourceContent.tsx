@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Search, TrendingUp, ShoppingCart, TicketPercent } from 'lucide-react';
+import { Search, ShoppingCart } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import ProductDetailModal from './ProductDetailModal';
 
@@ -25,19 +25,12 @@ interface Product {
   brandName?: string;
 }
 
-// 分类配置
-const categories = [
-  { id: '1', name: '数码', searchName: '电子产品', icon: '📱', color: 'bg-blue-50 text-blue-600' },
-  { id: '2', name: '服饰', searchName: '服装', icon: '👕', color: 'bg-pink-50 text-pink-600' },
-  { id: '3', name: '家居', searchName: '家居', icon: '🏠', color: 'bg-green-50 text-green-600' },
-  { id: '4', name: '美妆', searchName: '美妆', icon: '💄', color: 'bg-purple-50 text-purple-600' },
-  { id: '5', name: '食品', searchName: '零食', icon: '🍔', color: 'bg-orange-50 text-orange-600' },
-  { id: '6', name: '运动', searchName: '运动', icon: '⚽', color: 'bg-red-50 text-red-600' },
-  { id: '7', name: '母婴', searchName: '母婴', icon: '🍼', color: 'bg-yellow-50 text-yellow-600' },
-  { id: '8', name: '玩具', searchName: '玩具', icon: '🧸', color: 'bg-indigo-50 text-indigo-600' },
-  { id: '9', name: '车品', searchName: '汽车用品', icon: '🚗', color: 'bg-gray-100 text-gray-600' },
-  { id: '10', name: '图书', searchName: '图书', icon: '📚', color: 'bg-teal-50 text-teal-600' },
-];
+interface Category {
+  cid: number;
+  cname: string;
+  cpic: string;
+  subcategories?: { subcid: number; subcname: string; scpic: string }[];
+}
 
 export default function SearchSourcePage() {
   const router = useRouter();
@@ -48,15 +41,83 @@ export default function SearchSourcePage() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [cartCount, setCartCount] = useState(0);
 
-  // 热销数据
-  const [hotProducts, setHotProducts] = useState<Product[]>([]);
-  const [hotKeywords, setHotKeywords] = useState<string[]>([]);
-  const [hotLoading, setHotLoading] = useState(true);
+  // 超级分类
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [catLoading, setCatLoading] = useState(true);
+  const [activeCategory, setActiveCategory] = useState<number | null>(null);
   
-  // 瀑布流加载
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
+  // 猜你喜欢
+  const [guessProducts, setGuessProducts] = useState<Product[]>([]);
+  const [guessLoading, setGuessLoading] = useState(true);
+  const [guessPage, setGuessPage] = useState(1);
+  const [hasMoreGuess, setHasMoreGuess] = useState(true);
+  const [loadingMoreGuess, setLoadingMoreGuess] = useState(false);
+
+  // 翻译文本
+  const t = {
+    en: {
+      searchPlaceholder: 'Search products...',
+      guessYouLike: 'Guess You Like',
+      search: 'Search',
+      sales: 'sold',
+      addToCart: 'Add to List',
+      originalPrice: 'Original',
+      save: 'Save',
+      loadMore: 'Load More',
+      noMore: 'No more products',
+      loading: 'Loading...'
+    },
+    zh: {
+      searchPlaceholder: '搜索宝贝...',
+      guessYouLike: '猜你喜欢',
+      search: '搜索',
+      sales: '人付款',
+      addToCart: '加入清单',
+      originalPrice: '原价',
+      save: '省',
+      loadMore: '加载更多',
+      noMore: '没有更多了',
+      loading: '加载中...'
+    },
+    ar: {
+      searchPlaceholder: 'بحث...',
+      guessYouLike: 'قد يعجبك',
+      search: 'بحث',
+      sales: 'مباع',
+      addToCart: 'أضف إلى القائمة',
+      originalPrice: 'السعر الأصلي',
+      save: 'وفر',
+      loadMore: 'تحميل المزيد',
+      noMore: 'لا يوجد المزيد',
+      loading: 'جاري التحميل...'
+    },
+    ru: {
+      searchPlaceholder: 'Поиск...',
+      guessYouLike: 'Вам может понравиться',
+      search: 'Поиск',
+      sales: 'продано',
+      addToCart: 'Добавить в список',
+      originalPrice: 'Оригинальная цена',
+      save: 'Экономия',
+      loadMore: 'Загрузить ещё',
+      noMore: 'Больше нет',
+      loading: 'Загрузка...'
+    },
+    es: {
+      searchPlaceholder: 'Buscar...',
+      guessYouLike: 'Quizás te guste',
+      search: 'Buscar',
+      sales: 'vendidos',
+      addToCart: 'Añadir a la lista',
+      originalPrice: 'Precio original',
+      save: 'Ahorra',
+      loadMore: 'Cargar más',
+      noMore: 'No hay más',
+      loading: 'Cargando...'
+    }
+  };
+
+  const text = t[currentLang as keyof typeof t] || t.en;
 
   // 加载购物车数量
   useEffect(() => {
@@ -75,87 +136,70 @@ export default function SearchSourcePage() {
     }
   };
 
-  // 加载热销商品
+  // 加载超级分类
   useEffect(() => {
-    fetchHotProducts();
-  }, [currentLang]);
+    fetchCategories();
+  }, []);
 
-  const fetchHotProducts = async () => {
-    setHotLoading(true);
+  const fetchCategories = async () => {
     try {
-      const res = await fetch(`/api/hot-products?lang=${currentLang}&limit=10`);
+      const res = await fetch('/api/categories');
       const data = await res.json();
-      if (data.success) {
-        setHotProducts(data.products || []);
-        setHotKeywords(data.keywords || []);
+      if (data.success && data.categories) {
+        setCategories(data.categories);
       }
     } catch (e) {
-      console.error('Failed to load hot products:', e);
+      console.error('Failed to load categories:', e);
     } finally {
-      setHotLoading(false);
+      setCatLoading(false);
     }
   };
 
-  // 翻译文本
-  const t = {
-    en: {
-      searchPlaceholder: 'Search products...',
-      hotSearch: 'Trending',
-      hotProducts: 'Hot Products',
-      dailyDeals: 'Daily Deals',
-      categories: 'Categories',
-      search: 'Search',
-      sales: 'sold',
-      addToCart: 'Add to List',
-      buyNow: 'Buy Now',
-      originalPrice: 'Original',
-      save: 'Save',
-      searchHint: 'Search in Chinese for better results',
-      loadMore: 'Load More',
-      noMore: 'No more products',
-      loading: 'Loading...'
-    },
-    zh: {
-      searchPlaceholder: '搜索宝贝...',
-      hotSearch: '实时热搜',
-      hotProducts: '热销榜单',
-      dailyDeals: '每日好价',
-      categories: '分类',
-      search: '搜索',
-      sales: '人付款',
-      addToCart: '加入清单',
-      buyNow: '立即购买',
-      originalPrice: '原价',
-      save: '省',
-      searchHint: '中文搜索效果更佳',
-      loadMore: '加载更多',
-      noMore: '没有更多了',
-      loading: '加载中...'
+  // 加载猜你喜欢
+  useEffect(() => {
+    fetchGuessYouLike();
+  }, [currentLang]);
+
+  const fetchGuessYouLike = async (pageNum = 1) => {
+    if (pageNum === 1) setGuessLoading(true);
+    else setLoadingMoreGuess(true);
+    
+    try {
+      const res = await fetch(`/api/guess-you-like?lang=${currentLang}&page=${pageNum}&limit=10`);
+      const data = await res.json();
+      if (data.success) {
+        const newProducts = data.products || [];
+        if (pageNum === 1) {
+          setGuessProducts(newProducts);
+        } else {
+          setGuessProducts(prev => [...prev, ...newProducts]);
+        }
+        setHasMoreGuess(newProducts.length === 10);
+        setGuessPage(pageNum);
+      }
+    } catch (e) {
+      console.error('Failed to load guess you like:', e);
+    } finally {
+      setGuessLoading(false);
+      setLoadingMoreGuess(false);
     }
   };
-
-  const text = t[currentLang as keyof typeof t] || t.en;
 
   // 搜索商品
-  const handleSearch = async (searchQuery?: string, pageNum: number = 1) => {
+  const handleSearch = async (searchQuery?: string) => {
     const q = searchQuery || query;
     if (!q.trim()) return;
 
-    if (pageNum === 1) {
-      setLoading(true);
-      setProducts([]);
-      setPage(1);
-    } else {
-      setLoadingMore(true);
-    }
-
+    setLoading(true);
+    setProducts([]);
+    
     try {
       const response = await fetch('/api/search/dataoke', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           query: q,
-          page: pageNum,
+          page: 1,
           pageSize: 20,
           targetLang: currentLang
         })
@@ -163,28 +207,19 @@ export default function SearchSourcePage() {
 
       const data = await response.json();
       if (data.success) {
-        const newProducts = data.products || [];
-        if (pageNum === 1) {
-          setProducts(newProducts);
-        } else {
-          setProducts(prev => [...prev, ...newProducts]);
-        }
-        setHasMore(newProducts.length === 20);
-        setPage(pageNum);
+        setProducts(data.products || []);
       }
     } catch (error) {
       console.error('Search failed:', error);
     } finally {
       setLoading(false);
-      setLoadingMore(false);
     }
   };
 
-  // 加载更多
-  const loadMore = () => {
-    if (!loadingMore && hasMore) {
-      handleSearch(query, page + 1);
-    }
+  // 分类搜索
+  const handleCategorySearch = (catName: string) => {
+    setQuery(catName);
+    handleSearch(catName);
   };
 
   // 加入采购清单
@@ -205,10 +240,8 @@ export default function SearchSourcePage() {
 
       if (response.ok) {
         setCartCount(prev => prev + 1);
-        // Show a subtle toast instead of alert
-        // For now, just update count
       } else if (response.status === 409) {
-        // Already exists - silently ignore or show subtle hint
+        // Already exists
       }
     } catch (error) {
       console.error('Add to cart failed:', error);
@@ -230,6 +263,26 @@ export default function SearchSourcePage() {
       return (num / 10000).toFixed(1) + '万';
     }
     return num.toString();
+  };
+
+  // 翻译分类名称
+  const translateCatName = (name: string) => {
+    // Simple mapping for common categories
+    const map: Record<string, Record<string, string>> = {
+      '美食': { en: 'Food', ar: 'طعام', ru: 'Еда', es: 'Comida' },
+      '女装': { en: 'Women', ar: 'نساء', ru: 'Женщины', es: 'Mujeres' },
+      '美妆': { en: 'Beauty', ar: 'جمال', ru: 'Красота', es: 'Belleza' },
+      '居家日用': { en: 'Home', ar: 'منزل', ru: 'Дом', es: 'Hogar' },
+      '数码家电': { en: 'Digital', ar: 'رقمي', ru: 'Цифровой', es: 'Digital' },
+      '鞋品': { en: 'Shoes', ar: 'أحذية', ru: 'Обувь', es: 'Zapatos' },
+      '内衣': { en: 'Underwear', ar: 'ملابس داخلية', ru: 'Бельё', es: 'Ropa interior' },
+      '男装': { en: 'Men', ar: 'رجال', ru: 'Мужчины', es: 'Hombres' },
+      '母婴': { en: 'Baby', ar: 'أطفال', ru: 'Дети', es: 'Bebé' },
+      '运动户外': { en: 'Sports', ar: 'رياضة', ru: 'Спорт', es: 'Deportes' },
+      '箱包': { en: 'Bags', ar: 'حقائب', ru: 'Сумки', es: 'Bolsos' },
+      '配饰': { en: 'Accessories', ar: 'إكسسوارات', ru: 'Аксессуары', es: 'Accesorios' },
+    };
+    return map[name]?.[currentLang] || name;
   };
 
   return (
@@ -273,34 +326,35 @@ export default function SearchSourcePage() {
               )}
             </button>
           </div>
-          
-          {/* Search Hint */}
-          <p className="text-xs text-gray-400 mt-1.5 px-1">{text.searchHint}</p>
         </div>
       </div>
 
       <div className="max-w-4xl mx-auto px-3">
-        {/* Hot Keywords - Horizontal Scroll */}
+        {/* Horizontal Category Navigation */}
         {!products.length && (
-          <div className="py-3">
-            {hotLoading ? (
-              <div className="flex gap-2 animate-pulse overflow-x-auto">
-                {[1,2,3,4,5].map(i => (
-                  <div key={i} className="h-7 w-20 bg-gray-200 rounded-full flex-shrink-0" />
+          <div className="py-3 border-b">
+            {catLoading ? (
+              <div className="flex gap-4 animate-pulse overflow-x-auto">
+                {[1,2,3,4,5,6].map(i => (
+                  <div key={i} className="h-6 w-16 bg-gray-200 rounded-full flex-shrink-0" />
                 ))}
               </div>
             ) : (
-              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide -mx-3 px-3">
-                {hotKeywords.slice(0, 12).map(word => (
+              <div className="flex gap-1 overflow-x-auto pb-1 scrollbar-hide -mx-3 px-3">
+                {categories.map((cat, idx) => (
                   <button
-                    key={word}
+                    key={cat.cid}
                     onClick={() => {
-                      setQuery(word);
-                      handleSearch(word);
+                      setActiveCategory(cat.cid);
+                      handleCategorySearch(cat.cname);
                     }}
-                    className="px-3 py-1.5 bg-gradient-to-r from-red-50 to-orange-50 border border-red-100 rounded-full text-xs hover:bg-red-100 transition-colors flex-shrink-0 whitespace-nowrap"
+                    className={`px-4 py-1.5 rounded-full text-sm whitespace-nowrap flex-shrink-0 transition-colors ${
+                      activeCategory === cat.cid 
+                        ? 'bg-orange-500 text-white' 
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
                   >
-                    <span className="mr-1">🔥</span>{word}
+                    {translateCatName(cat.cname)}
                   </button>
                 ))}
               </div>
@@ -308,42 +362,17 @@ export default function SearchSourcePage() {
           </div>
         )}
 
-        {/* Categories Grid - Taobao Style */}
+        {/* Section Header - Guess You Like */}
         {!products.length && (
-          <div className="py-2">
-            <div className="grid grid-cols-5 gap-2">
-              {categories.map(cat => (
-                <button
-                  key={cat.id}
-                  onClick={() => {
-                    setQuery(cat.searchName);
-                    handleSearch(cat.searchName);
-                  }}
-                  className="flex flex-col items-center gap-1 py-2 rounded-xl hover:bg-gray-50 active:scale-95 transition-all"
-                >
-                  <div className={`w-10 h-10 rounded-full ${cat.color} flex items-center justify-center text-lg`}>
-                    {cat.icon}
-                  </div>
-                  <span className="text-[11px] text-gray-600">{cat.name}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Section Header */}
-        {!products.length && (
-          <div className="flex items-center gap-2 py-3 border-b">
-            <TrendingUp className="w-4 h-4 text-red-500" />
-            <span className="text-sm font-bold text-gray-800">{text.hotProducts}</span>
-            <span className="text-xs text-gray-400 ml-auto">{text.dailyDeals}</span>
+          <div className="flex items-center gap-2 py-3">
+            <span className="text-sm font-bold text-gray-800">{text.guessYouLike}</span>
           </div>
         )}
 
         {/* Products Grid */}
-        {(products.length > 0 || !hotLoading) && (
+        {(products.length > 0 || !guessLoading) && (
           <div className="grid grid-cols-2 gap-2.5 py-3">
-            {(products.length > 0 ? products : hotProducts).map(product => {
+            {(products.length > 0 ? products : guessProducts).map(product => {
               const savings = getSavings(product);
               return (
                 <div 
@@ -414,16 +443,16 @@ export default function SearchSourcePage() {
           </div>
         )}
 
-        {/* Load More */}
-        {products.length > 0 && (
+        {/* Load More - Guess You Like */}
+        {!products.length && (
           <div className="py-4 text-center">
-            {hasMore ? (
+            {hasMoreGuess ? (
               <button
-                onClick={loadMore}
-                disabled={loadingMore}
+                onClick={() => fetchGuessYouLike(guessPage + 1)}
+                disabled={loadingMoreGuess}
                 className="px-6 py-2 bg-white border rounded-full text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-50"
               >
-                {loadingMore ? text.loading : text.loadMore}
+                {loadingMoreGuess ? text.loading : text.loadMore}
               </button>
             ) : (
               <span className="text-xs text-gray-400">{text.noMore}</span>
