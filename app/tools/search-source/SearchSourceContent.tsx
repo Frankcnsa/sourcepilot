@@ -16,6 +16,7 @@ interface Product {
   sales: string;
   link: string;
   coupon?: string;
+  hotKeyword?: string;
 }
 
 export default function SearchSourcePage() {
@@ -28,11 +29,31 @@ export default function SearchSourcePage() {
   const [cartCount, setCartCount] = useState(0);
   const [convertingLink, setConvertingLink] = useState<string | null>(null);
 
-  // 热搜词（中文，大淘客支持中文搜索）
-  const hotWords = [
-    '手机壳', '数据线', '耳机', '充电器',
-    '钢化膜', '蓝牙音箱', '充电宝', '智能手表'
-  ];
+  // 真实热销数据
+  const [hotProducts, setHotProducts] = useState<Product[]>([]);
+  const [hotKeywords, setHotKeywords] = useState<string[]>([]);
+  const [hotLoading, setHotLoading] = useState(true);
+
+  // 加载热销商品
+  useEffect(() => {
+    fetchHotProducts();
+  }, [currentLang]);
+
+  const fetchHotProducts = async () => {
+    setHotLoading(true);
+    try {
+      const res = await fetch(`/api/hot-products?lang=${currentLang}&limit=8`);
+      const data = await res.json();
+      if (data.success) {
+        setHotProducts(data.products || []);
+        setHotKeywords(data.keywords || []);
+      }
+    } catch (e) {
+      console.error('Failed to load hot products:', e);
+    } finally {
+      setHotLoading(false);
+    }
+  };
 
   // 分类（中英文对应）
   const categories = [
@@ -57,7 +78,8 @@ export default function SearchSourcePage() {
   const t = {
     en: {
       searchPlaceholder: 'Search for products (Chinese keywords work best)...',
-      hotSearch: 'Popular Searches',
+      hotSearch: 'Trending Now',
+      hotProducts: 'Trending Products',
       categories: 'Categories',
       search: 'Search',
       price: 'Price',
@@ -73,7 +95,8 @@ export default function SearchSourcePage() {
     },
     zh: {
       searchPlaceholder: '搜索商品...',
-      hotSearch: '热门搜索',
+      hotSearch: '实时热搜',
+      hotProducts: '热销商品',
       categories: '商品分类',
       search: '搜索',
       price: '价格',
@@ -89,7 +112,8 @@ export default function SearchSourcePage() {
     },
     ar: {
       searchPlaceholder: 'البحث عن المنتجات (الكلمات الصينية تعمل بشكل أفضل)...',
-      hotSearch: 'عمليات البحث الشائعة',
+      hotSearch: 'البحث الشائع',
+      hotProducts: 'المنتجات الرائجة',
       categories: 'التصنيفات',
       search: 'بحث',
       price: 'السعر',
@@ -106,6 +130,7 @@ export default function SearchSourcePage() {
     ru: {
       searchPlaceholder: 'Поиск товаров (китайские ключевые слова работают лучше)...',
       hotSearch: 'Популярные запросы',
+      hotProducts: 'Трендовые товары',
       categories: 'Категории',
       search: 'Поиск',
       price: 'Цена',
@@ -122,6 +147,7 @@ export default function SearchSourcePage() {
     es: {
       searchPlaceholder: 'Buscar productos (palabras clave en chino funcionan mejor)...',
       hotSearch: 'Búsquedas populares',
+      hotProducts: 'Productos en tendencia',
       categories: 'Categorías',
       search: 'Buscar',
       price: 'Precio',
@@ -262,51 +288,122 @@ export default function SearchSourcePage() {
         {/* Search Hint */}
         <p className="text-sm text-gray-500 mb-4">{text.searchHint}</p>
 
-        {/* Hot Searches */}
+        {/* Hot Keywords + Trending Products */}
         {!products.length && (
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-3 text-gray-600">
-              <TrendingUp className="w-4 h-4" />
-              <span className="text-sm font-medium">{text.hotSearch}</span>
+          <div className="space-y-6 mb-8">
+            {/* Real Hot Keywords */}
+            <div>
+              <div className="flex items-center gap-2 mb-3 text-gray-600">
+                <TrendingUp className="w-4 h-4 text-red-500" />
+                <span className="text-sm font-medium">{text.hotSearch}</span>
+                <span className="text-xs text-gray-400 ml-2">Live from Dataoke</span>
+              </div>
+              {hotLoading ? (
+                <div className="flex gap-2 animate-pulse">
+                  {[1,2,3,4,5].map(i => (
+                    <div key={i} className="h-8 w-20 bg-gray-200 rounded-full" />
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {hotKeywords.slice(0, 8).map(word => (
+                    <button
+                      key={word}
+                      onClick={() => {
+                        setQuery(word);
+                        handleSearch(word);
+                      }}
+                      className="px-4 py-2 bg-gradient-to-r from-red-50 to-orange-50 border border-red-100 rounded-full text-sm hover:bg-red-100 hover:border-red-300 transition-colors"
+                    >
+                      🔥 {word}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-            <div className="flex flex-wrap gap-2">
-              {hotWords.map(word => (
-                <button
-                  key={word}
-                  onClick={() => {
-                    setQuery(word);
-                    handleSearch(word);
-                  }}
-                  className="px-4 py-2 bg-white border rounded-full text-sm hover:bg-gray-50 hover:border-blue-300"
-                >
-                  {word}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
 
-        {/* Categories */}
-        {!products.length && (
-          <div className="mb-8">
-            <div className="flex items-center gap-2 mb-3 text-gray-600">
-              <Grid3X3 className="w-4 h-4" />
-              <span className="text-sm font-medium">{text.categories}</span>
+            {/* Trending Products */}
+            <div>
+              <div className="flex items-center gap-2 mb-3 text-gray-600">
+                <Grid3X3 className="w-4 h-4 text-blue-500" />
+                <span className="text-sm font-medium">{text.hotProducts}</span>
+              </div>
+              {hotLoading ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {[1,2,3,4].map(i => (
+                    <div key={i} className="bg-gray-100 rounded-xl h-48 animate-pulse" />
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {hotProducts.map(product => {
+                    const savings = getSavings(product);
+                    return (
+                      <div key={product.id} className="bg-white border rounded-xl overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                        onClick={() => setSelectedProduct(product)}>
+                        <div className="aspect-square bg-gray-100 relative">
+                          <img
+                            src={product.image}
+                            alt={product.title}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = 'https://via.placeholder.com/300x300?text=No+Image';
+                            }}
+                          />
+                          {product.hotKeyword && (
+                            <div className="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                              🔥 {product.hotKeyword}
+                            </div>
+                          )}
+                        </div>
+                        <div className="p-3">
+                          <h3 className="text-sm font-medium text-gray-900 line-clamp-2">
+                            {product.title}
+                          </h3>
+                          <div className="mt-2 flex items-baseline gap-2">
+                            <span className="text-lg font-bold text-red-600">
+                              ¥{product.price}
+                            </span>
+                            {product.originalPrice && product.originalPrice > product.price && (
+                              <span className="text-xs text-gray-400 line-through">
+                                ¥{product.originalPrice}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center justify-between mt-1">
+                            <span className="text-xs text-gray-500">
+                              {product.sales} {text.sales}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-            <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
-              {categories.map(cat => (
-                <button
-                  key={cat.id}
-                  onClick={() => {
-                    setQuery(cat.searchName);
-                    handleSearch(cat.searchName);
-                  }}
-                  className="p-4 bg-white border rounded-xl text-center hover:shadow-md transition-shadow"
-                >
-                  <span className="text-2xl mb-2 block">{cat.icon}</span>
-                  <span className="text-sm text-gray-700">{cat.name}</span>
-                </button>
-              ))}
+
+            {/* Categories */}
+            <div>
+              <div className="flex items-center gap-2 mb-3 text-gray-600">
+                <Grid3X3 className="w-4 h-4" />
+                <span className="text-sm font-medium">{text.categories}</span>
+              </div>
+              <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
+                {categories.map(cat => (
+                  <button
+                    key={cat.id}
+                    onClick={() => {
+                      setQuery(cat.searchName);
+                      handleSearch(cat.searchName);
+                    }}
+                    className="p-4 bg-white border rounded-xl text-center hover:shadow-md transition-shadow"
+                  >
+                    <span className="text-2xl mb-2 block">{cat.icon}</span>
+                    <span className="text-sm text-gray-700">{cat.name}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         )}
