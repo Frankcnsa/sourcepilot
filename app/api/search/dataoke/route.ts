@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Step 4: 转换商品数据格式
-    let products = (data.products || []).map((item: any) => ({
+    let products: { id: string; title: string; originalTitle?: string; price: number; originalPrice?: number; image: string; shop: string; sales: string; link: string; coupon: string }[] = (data.products || []).map((item: any) => ({
       id: String(item.id || item.goodsId || item.itemId || Math.random().toString(36)),
       title: item.title || item.goodsName || 'Unknown Product',
       originalTitle: item.originalTitle || item.title || item.goodsName,
