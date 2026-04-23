@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Trash2, FileText, CheckSquare, Square, Send, ExternalLink } from 'lucide-react';
+import { Trash2, FileText, CheckSquare, Square, Send, ExternalLink, ShoppingCart } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 interface SourcingItem {
