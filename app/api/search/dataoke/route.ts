@@ -4,10 +4,8 @@ import { translateText, translateBatch } from '@/lib/aliyun-translate';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-// 本地大淘客中转服务
 const DATAOKE_PROXY_URL = process.env.DATAOKE_PROXY_URL || 'http://127.0.0.1:3001';
 
-// 检测语言
 function detectLanguage(text: string): string {
   if (/[\u4e00-\u9fa5]/.test(text)) return 'zh';
   return 'en';
@@ -19,75 +17,67 @@ export async function POST(request: NextRequest) {
     const { query, page = 1, pageSize = 20, targetLang = 'en' } = body;
 
     if (!query || typeof query !== 'string') {
-      return NextResponse.json(
-        { error: 'Query is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Query is required' }, { status: 400 });
     }
 
-    console.log(`[Dataoke Search] Original query: "${query}", targetLang: ${targetLang}`);
+    console.log(`[Dataoke] Query: "${query}", target: ${targetLang}`);
 
-    // Step 1: 检测查询语言
     const sourceLang = detectLanguage(query);
-    console.log(`[Dataoke Search] Detected language: ${sourceLang}`);
-
-    // Step 2: 如果是非中文，翻译成中文给大淘客
     let searchQuery = query;
+    
     if (sourceLang !== 'zh') {
       searchQuery = await translateText(query, sourceLang, 'zh');
-      console.log(`[Dataoke Search] Translated query: "${searchQuery}"`);
+      console.log(`[Dataoke] Translated: "${searchQuery}"`);
     }
 
-    // Step 3: 调用大淘客搜索（本地中转）
     const response = await fetch(`${DATAOKE_PROXY_URL}/api/search/taobao`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        query: searchQuery,
-        page,
-        pageSize
-      }),
+      body: JSON.stringify({ query: searchQuery, page, pageSize }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('[Dataoke Search] Error:', response.status, errorText);
+      console.error('[Dataoke] FC Error:', response.status, errorText);
       throw new Error(`Search failed: ${response.status}`);
     }
 
     const data = await response.json();
+    console.log('[Dataoke] FC response keys:', Object.keys(data));
+    console.log('[Dataoke] FC data type:', typeof data.data);
+    if (data.data && typeof data.data === 'object') {
+      console.log('[Dataoke] FC data.data keys:', Object.keys(data.data));
+    }
 
     if (!data.success) {
       throw new Error(data.error || 'Search failed');
     }
 
-    // Extract products from FC response format: data.data.list
+    // Extract products from FC response
     const rawProducts = data.data?.list || data.products || [];
-    console.log(`[Dataoke Search] Got ${rawProducts.length} products from FC`);
+    console.log(`[Dataoke] Raw products count: ${rawProducts.length}`);
 
-    // Step 4: 转换商品数据格式
-    let products: { id: string; title: string; originalTitle?: string; price: number; originalPrice?: number; image: string; shop: string; sales: string; link: string; coupon: string }[] = rawProducts.map((item: any) => ({
-      id: String(item.id || item.goodsId || item.itemId || Math.random().toString(36)),
+    let products = rawProducts.map((item: any) => ({
+      id: String(item.id || item.goodsId || Math.random().toString(36)),
       title: item.title || item.goodsName || item.dtitle || 'Unknown Product',
-      originalTitle: item.originalTitle || item.title || item.goodsName || item.dtitle,
+      originalTitle: item.dtitle || item.title || item.goodsName,
       price: parseFloat(item.actualPrice || item.zkFinalPrice || item.price || 0),
       originalPrice: item.originalPrice ? parseFloat(item.originalPrice) : (item.originPrice ? parseFloat(item.originPrice) : undefined),
       image: item.mainPic || item.pic || item.pictUrl || item.image || '',
       shop: item.shopTitle || item.nick || item.shop || 'Taobao Shop',
-      sales: item.volume || item.sales || item.deal || '0',
+      sales: item.monthSales || item.volume || item.sales || '0',
       link: item.couponLink || item.itemLink || item.url || item.link || '',
       coupon: item.couponInfo || item.couponAmount || item.coupon || '',
     }));
 
-    // Step 5: 如果用户语言不是中文，翻译商品标题回用户语言
+    // Translate back if needed
     if (targetLang !== 'zh' && products.length > 0) {
-      console.log(`[Dataoke Search] Translating ${products.length} product titles to ${targetLang}`);
-      const titles = products.map(p => p.title || 'Unknown Product');
-      const translatedTitles = await translateBatch(titles, 'zh', targetLang);
-      products = products.map((p, i) => ({
+      const titles = products.map((p: { title: string }) => p.title);
+      const translated = await translateBatch(titles, 'zh', targetLang);
+      products = products.map((p: { title: string; originalTitle?: string }, i: number) => ({
         ...p,
         originalTitle: p.title,
-        title: translatedTitles[i] || p.title
+        title: translated[i] || p.title
       }));
     }
 
@@ -98,17 +88,14 @@ export async function POST(request: NextRequest) {
       page,
       pageSize,
       products,
-      total: data.total || products.length,
-      hasMore: data.hasMore || products.length >= pageSize
+      total: data.data?.totalNum || data.total || products.length,
+      hasMore: products.length >= pageSize
     });
 
   } catch (error) {
-    console.error('[Dataoke Search] Error:', error);
+    console.error('[Dataoke] Error:', error);
     return NextResponse.json(
-      { 
-        error: 'Search failed',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
+      { error: 'Search failed', details: error instanceof Error ? error.message : 'Unknown' },
       { status: 500 }
     );
   }
