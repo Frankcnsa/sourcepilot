@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, ShoppingCart, Minus, Plus, TicketPercent } from 'lucide-react';
+import { X, ShoppingCart, Minus, Plus, TicketPercent, Store, Star, Truck, Shield } from 'lucide-react';
 
 interface Product {
   id: string;
@@ -18,12 +18,20 @@ interface Product {
   couponLink?: string;
   brandName?: string;
   shopType?: number;
+  monthSales?: number;
+  couponPrice?: number;
+  couponConditions?: string;
+  shopLevel?: number;
+  descScore?: number;
+  dsrScore?: number;
+  shipScore?: number;
+  serviceScore?: number;
 }
 
 interface Props {
   product: Product;
   onClose: () => void;
-  onAddToCart: (product: Product) => void;
+  onAddToCart: (product: Product) => void | Promise<void>;
   currentLang: string;
 }
 
@@ -45,7 +53,15 @@ export default function ProductDetailModal({ product, onClose, onAddToCart, curr
       coupon: 'Coupon',
       brand: 'Brand',
       desc: 'Description',
-      save: 'Save'
+      save: 'Save',
+      shopScore: 'Shop Score',
+      shipping: 'Shipping',
+      service: 'Service',
+      tmall: 'Tmall',
+      monthlySales: 'Monthly Sales',
+      couponInfo: 'Coupon',
+      freeShipping: 'Free Shipping',
+      guarantee: 'Quality Guarantee'
     },
     zh: {
       price: '价格',
@@ -59,7 +75,15 @@ export default function ProductDetailModal({ product, onClose, onAddToCart, curr
       coupon: '优惠券',
       brand: '品牌',
       desc: '商品描述',
-      save: '省'
+      save: '省',
+      shopScore: '店铺评分',
+      shipping: '物流',
+      service: '服务',
+      tmall: '天猫',
+      monthlySales: '月销',
+      couponInfo: '领券',
+      freeShipping: '包邮',
+      guarantee: '品质保证'
     },
     ar: {
       price: 'السعر',
@@ -73,7 +97,15 @@ export default function ProductDetailModal({ product, onClose, onAddToCart, curr
       coupon: 'كوبون',
       brand: 'الماركة',
       desc: 'الوصف',
-      save: 'وفر'
+      save: 'وفر',
+      shopScore: 'تقييم المتجر',
+      shipping: 'الشحن',
+      service: 'الخدمة',
+      tmall: 'تيانماو',
+      monthlySales: 'مبيعات شهرية',
+      couponInfo: 'كوبون',
+      freeShipping: 'شحن مجاني',
+      guarantee: 'ضمان الجودة'
     },
     ru: {
       price: 'Цена',
@@ -87,7 +119,15 @@ export default function ProductDetailModal({ product, onClose, onAddToCart, curr
       coupon: 'Купон',
       brand: 'Бренд',
       desc: 'Описание',
-      save: 'Экономия'
+      save: 'Экономия',
+      shopScore: 'Рейтинг магазина',
+      shipping: 'Доставка',
+      service: 'Сервис',
+      tmall: 'Tmall',
+      monthlySales: 'Продажи за месяц',
+      couponInfo: 'Купон',
+      freeShipping: 'Бесплатная доставка',
+      guarantee: 'Гарантия качества'
     },
     es: {
       price: 'Precio',
@@ -101,7 +141,15 @@ export default function ProductDetailModal({ product, onClose, onAddToCart, curr
       coupon: 'Cupón',
       brand: 'Marca',
       desc: 'Descripción',
-      save: 'Ahorra'
+      save: 'Ahorra',
+      shopScore: 'Puntuación de tienda',
+      shipping: 'Envío',
+      service: 'Servicio',
+      tmall: 'Tmall',
+      monthlySales: 'Ventas mensuales',
+      couponInfo: 'Cupón',
+      freeShipping: 'Envío gratis',
+      guarantee: 'Garantía de calidad'
     }
   };
 
@@ -117,12 +165,29 @@ export default function ProductDetailModal({ product, onClose, onAddToCart, curr
     setTimeout(() => setAdded(false), 1500);
   };
 
+  // 格式化销量
+  const formatSales = (sales: number | string) => {
+    const num = typeof sales === 'string' ? parseInt(sales) || 0 : sales || 0;
+    if (num >= 10000) {
+      return (num / 10000).toFixed(1) + '万';
+    }
+    return num.toString();
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/50">
       <div className="bg-white rounded-t-2xl md:rounded-2xl w-full max-w-lg md:max-h-[85vh] overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b bg-white">
-          <h2 className="text-sm font-medium text-gray-500">{text.shop}: {product.shop}</h2>
+          <div className="flex items-center gap-2">
+            <Store className="w-4 h-4 text-gray-500" />
+            <h2 className="text-sm font-medium text-gray-500">{product.shop}</h2>
+            {product.shopType === 1 && (
+              <span className="px-1.5 py-0.5 bg-red-50 text-red-600 text-[10px] rounded border border-red-100">
+                {text.tmall}
+              </span>
+            )}
+          </div>
           <button
             onClick={onClose}
             className="p-1.5 hover:bg-gray-100 rounded-full"
@@ -155,7 +220,7 @@ export default function ProductDetailModal({ product, onClose, onAddToCart, curr
           <div className="p-4 space-y-4">
             {/* Title */}
             <h1 className="text-base font-semibold text-gray-900 leading-snug">
-              {product.brandName && <span className="text-red-500">{product.brandName}</span>} {product.title}
+              {product.brandName && <span className="text-red-500 font-medium">{product.brandName}</span>} {product.title}
             </h1>
 
             {/* Price */}
@@ -174,21 +239,65 @@ export default function ProductDetailModal({ product, onClose, onAddToCart, curr
               )}
             </div>
 
-            {/* Meta Info */}
+            {/* Meta Info Row */}
             <div className="flex items-center gap-4 text-xs text-gray-500">
-              <span>{text.sales}: {product.sales}</span>
+              <span>{text.monthlySales}: {formatSales(product.monthSales || product.sales)}</span>
               {product.shopType === 1 && (
-                <span className="text-red-500 font-medium">天猫</span>
+                <span className="text-red-500 font-medium">{text.tmall}</span>
               )}
             </div>
 
-            {/* Coupon */}
+            {/* Service Tags */}
+            <div className="flex gap-2 flex-wrap">
+              <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-50 text-green-600 text-xs rounded">
+                <Truck className="w-3 h-3" />
+                {text.freeShipping}
+              </span>
+              <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-600 text-xs rounded">
+                <Shield className="w-3 h-3" />
+                {text.guarantee}
+              </span>
+              {product.coupon && (
+                <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-50 text-red-600 text-xs rounded">
+                  <TicketPercent className="w-3 h-3" />
+                  {product.coupon}
+                </span>
+              )}
+            </div>
+
+            {/* Coupon Card */}
             {product.coupon && (
-              <div className="p-3 bg-red-50 border border-red-100 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <TicketPercent className="w-4 h-4 text-red-500" />
-                  <span className="text-sm text-red-700 font-medium">{product.coupon}</span>
+              <div className="p-3 bg-gradient-to-r from-red-50 to-orange-50 border border-red-100 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <TicketPercent className="w-4 h-4 text-red-500" />
+                    <span className="text-sm text-red-700 font-medium">{product.coupon}</span>
+                  </div>
+                  <span className="text-xs text-red-500">{text.couponInfo}</span>
                 </div>
+              </div>
+            )}
+
+            {/* Shop Score */}
+            {(product.descScore || product.dsrScore) && (
+              <div className="p-3 bg-gray-50 rounded-lg space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600">{text.shopScore}</span>
+                  <div className="flex items-center gap-1">
+                    <Star className="w-3.5 h-3.5 text-orange-400 fill-orange-400" />
+                    <span className="text-orange-500 font-medium">{product.descScore || product.dsrScore}</span>
+                  </div>
+                </div>
+                {(product.shipScore || product.serviceScore) && (
+                  <div className="flex gap-4 text-xs text-gray-500">
+                    {product.shipScore && (
+                      <span>{text.shipping}: {product.shipScore}</span>
+                    )}
+                    {product.serviceScore && (
+                      <span>{text.service}: {product.serviceScore}</span>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
