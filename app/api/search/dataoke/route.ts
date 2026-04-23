@@ -61,18 +61,22 @@ export async function POST(request: NextRequest) {
       throw new Error(data.error || 'Search failed');
     }
 
+    // Extract products from FC response format: data.data.list
+    const rawProducts = data.data?.list || data.products || [];
+    console.log(`[Dataoke Search] Got ${rawProducts.length} products from FC`);
+
     // Step 4: 转换商品数据格式
-    let products: { id: string; title: string; originalTitle?: string; price: number; originalPrice?: number; image: string; shop: string; sales: string; link: string; coupon: string }[] = (data.products || []).map((item: any) => ({
+    let products: { id: string; title: string; originalTitle?: string; price: number; originalPrice?: number; image: string; shop: string; sales: string; link: string; coupon: string }[] = rawProducts.map((item: any) => ({
       id: String(item.id || item.goodsId || item.itemId || Math.random().toString(36)),
-      title: item.title || item.goodsName || 'Unknown Product',
-      originalTitle: item.originalTitle || item.title || item.goodsName,
-      price: parseFloat(item.price || item.actualPrice || item.zkFinalPrice || 0),
-      originalPrice: item.originalPrice ? parseFloat(item.originalPrice) : undefined,
-      image: item.image || item.pic || item.mainPic || item.pictUrl || '',
-      shop: item.shop || item.shopTitle || item.nick || 'Taobao Shop',
-      sales: item.sales || item.volume || item.deal || '0',
-      link: item.link || item.itemLink || item.url || item.couponLink || '',
-      coupon: item.coupon || item.couponInfo || item.couponAmount || '',
+      title: item.title || item.goodsName || item.dtitle || 'Unknown Product',
+      originalTitle: item.originalTitle || item.title || item.goodsName || item.dtitle,
+      price: parseFloat(item.actualPrice || item.zkFinalPrice || item.price || 0),
+      originalPrice: item.originalPrice ? parseFloat(item.originalPrice) : (item.originPrice ? parseFloat(item.originPrice) : undefined),
+      image: item.mainPic || item.pic || item.pictUrl || item.image || '',
+      shop: item.shopTitle || item.nick || item.shop || 'Taobao Shop',
+      sales: item.volume || item.sales || item.deal || '0',
+      link: item.couponLink || item.itemLink || item.url || item.link || '',
+      coupon: item.couponInfo || item.couponAmount || item.coupon || '',
     }));
 
     // Step 5: 如果用户语言不是中文，翻译商品标题回用户语言
