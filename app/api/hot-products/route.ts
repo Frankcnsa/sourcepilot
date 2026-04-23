@@ -38,9 +38,13 @@ export async function GET(request: Request) {
       image: item.mainPic || item.pic || '',
       shop: item.shopTitle || item.nick || 'Taobao',
       sales: item.monthSales || item.volume || '0',
+      monthSales: item.monthSales || item.volume || 0,
       link: item.couponLink || item.itemLink || '',
       coupon: item.couponInfo || item.couponAmount || '',
-      hotKeyword: item._hotKeyword || ''
+      couponInfo: item.couponInfo || item.couponAmount || '',
+      hotKeyword: item._hotKeyword || '',
+      commissionRate: item.commissionRate || 0,
+      shopType: item.shopType || 0
     }));
 
     // Translate titles if not Chinese
