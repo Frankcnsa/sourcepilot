@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, ShoppingCart, Globe, ChevronRight, TrendingUp, Grid3X3, TicketPercent, ExternalLink } from 'lucide-react';
+import { Search, TrendingUp, Grid3X3, TicketPercent, ExternalLink } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import ProductDetailModal from './ProductDetailModal';
 
@@ -236,65 +236,18 @@ export default function SearchSourcePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-xl font-semibold text-gray-900">SourcePilot</h1>
-          
-          <div className="flex items-center gap-4">
-            {/* Language Selector */}
-            <div className="relative group">
-              <button className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100">
-                <Globe className="w-4 h-4" />
-                <span>{languages.find(l => l.code === currentLang)?.flag}</span>
-                <span className="text-sm">{languages.find(l => l.code === currentLang)?.name}</span>
-              </button>
-              
-              <div className="absolute right-0 top-full mt-1 bg-white border rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
-                {languages.map(lang => (
-                  <button
-                    key={lang.code}
-                    onClick={() => setCurrentLang(lang.code)}
-                    className={`flex items-center gap-2 px-4 py-2 w-full text-left hover:bg-gray-50 ${
-                      currentLang === lang.code ? 'bg-blue-50 text-blue-600' : ''
-                    }`}
-                  >
-                    <span>{lang.flag}</span>
-                    <span className="text-sm">{lang.name}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Sourcing List Button */}
-            <button 
-              onClick={() => router.push('/tools/sourcing-list')}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              <ShoppingCart className="w-4 h-4" />
-              <span className="text-sm">{text.sourcingList}</span>
-              {cartCount > 0 && (
-                <span className="ml-1 px-2 py-0.5 bg-white text-blue-600 text-xs rounded-full">
-                  {cartCount}
-                </span>
-              )}
-            </button>
-          </div>
-        </div>
-      </header>
-
+    <div className="h-full bg-gray-50">
       {/* Search Section */}
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="max-w-4xl mx-auto px-4 py-6">
         {/* Search Box */}
-        <div className="relative mb-6">
+        <div className="relative mb-4">
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
             placeholder={text.searchPlaceholder}
-            className="w-full px-4 py-4 pl-12 pr-24 text-lg border rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-3 pl-12 pr-24 text-base border rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
           />
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
           <button

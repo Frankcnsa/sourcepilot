@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import SourcingListContent from './SourcingListContent';
+import AppLayout from '@/components/AppLayout';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -30,8 +31,8 @@ export default async function SourcingListPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <AppLayout currentTool="sourcing-history">
       <SourcingListContent user={{ id: session.user.id, email: session.user.email }} />
-    </div>
+    </AppLayout>
   );
 }
