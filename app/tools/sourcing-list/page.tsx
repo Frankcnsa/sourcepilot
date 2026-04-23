@@ -32,7 +32,7 @@ export default async function SourcingListPage() {
 
   return (
     <AppLayout currentTool="sourcing-history">
-      <SourcingListContent user={{ id: session.user.id, email: session.user.email }} />
+      <SourcingListContent />
     </AppLayout>
   );
 }

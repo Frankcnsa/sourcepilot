@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { X, ShoppingCart, ExternalLink, TicketPercent } from 'lucide-react';
+import { useState } from 'react';
+import { X, ShoppingCart, Minus, Plus, TicketPercent } from 'lucide-react';
 
 interface Product {
   id: string;
@@ -14,30 +14,37 @@ interface Product {
   sales: string;
   link: string;
   coupon?: string;
+  desc?: string;
+  couponLink?: string;
+  brandName?: string;
+  shopType?: number;
 }
 
 interface Props {
   product: Product;
   onClose: () => void;
   onAddToCart: (product: Product) => void;
-  onGetCoupon: (product: Product) => void;
   currentLang: string;
 }
 
-export default function ProductDetailModal({ product, onClose, onAddToCart, onGetCoupon, currentLang }: Props) {
-  const [loading, setLoading] = useState(true);
+export default function ProductDetailModal({ product, onClose, onAddToCart, currentLang }: Props) {
+  const [quantity, setQuantity] = useState(1);
+  const [added, setAdded] = useState(false);
 
   // 翻译文本
   const t = {
     en: {
       price: 'Price',
-      originalPrice: 'Original Price',
+      originalPrice: 'Original',
       sales: 'Sales',
       shop: 'Shop',
       addToList: 'Add to Sourcing List',
-      getCoupon: 'Get Coupon & Buy',
+      added: 'Added!',
       close: 'Close',
-      loading: 'Loading...',
+      quantity: 'Quantity',
+      coupon: 'Coupon',
+      brand: 'Brand',
+      desc: 'Description',
       save: 'Save'
     },
     zh: {
@@ -46,9 +53,12 @@ export default function ProductDetailModal({ product, onClose, onAddToCart, onGe
       sales: '销量',
       shop: '店铺',
       addToList: '加入采购清单',
-      getCoupon: '领券购买',
+      added: '已加入！',
       close: '关闭',
-      loading: '加载中...',
+      quantity: '数量',
+      coupon: '优惠券',
+      brand: '品牌',
+      desc: '商品描述',
       save: '省'
     },
     ar: {
@@ -57,9 +67,12 @@ export default function ProductDetailModal({ product, onClose, onAddToCart, onGe
       sales: 'المبيعات',
       shop: 'المتجر',
       addToList: 'إضافة إلى القائمة',
-      getCoupon: 'احصل على كوبون واشتري',
+      added: 'تمت الإضافة!',
       close: 'إغلاق',
-      loading: 'جاري التحميل...',
+      quantity: 'الكمية',
+      coupon: 'كوبون',
+      brand: 'الماركة',
+      desc: 'الوصف',
       save: 'وفر'
     },
     ru: {
@@ -68,9 +81,12 @@ export default function ProductDetailModal({ product, onClose, onAddToCart, onGe
       sales: 'Продажи',
       shop: 'Магазин',
       addToList: 'Добавить в список',
-      getCoupon: 'Получить купон и купить',
+      added: 'Добавлено!',
       close: 'Закрыть',
-      loading: 'Загрузка...',
+      quantity: 'Количество',
+      coupon: 'Купон',
+      brand: 'Бренд',
+      desc: 'Описание',
       save: 'Экономия'
     },
     es: {
@@ -79,149 +95,146 @@ export default function ProductDetailModal({ product, onClose, onAddToCart, onGe
       sales: 'Ventas',
       shop: 'Tienda',
       addToList: 'Añadir a la lista',
-      getCoupon: 'Obtener cupón y comprar',
+      added: '¡Añadido!',
       close: 'Cerrar',
-      loading: 'Cargando...',
+      quantity: 'Cantidad',
+      coupon: 'Cupón',
+      brand: 'Marca',
+      desc: 'Descripción',
       save: 'Ahorra'
     }
   };
 
   const text = t[currentLang as keyof typeof t] || t.en;
 
-  useEffect(() => {
-    // Simulate loading for smooth UX
-    const timer = setTimeout(() => setLoading(false), 300);
-    return () => clearTimeout(timer);
-  }, [product.id]);
-
   const savings = product.originalPrice && product.originalPrice > product.price
     ? (product.originalPrice - product.price).toFixed(2)
     : null;
 
+  const handleAddToCart = () => {
+    onAddToCart(product);
+    setAdded(true);
+    setTimeout(() => setAdded(false), 1500);
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-      <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/50">
+      <div className="bg-white rounded-t-2xl md:rounded-2xl w-full max-w-lg md:max-h-[85vh] overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b">
-          <h2 className="text-lg font-semibold text-gray-900 line-clamp-1">
-            {product.title}
-          </h2>
+        <div className="flex items-center justify-between px-4 py-3 border-b bg-white">
+          <h2 className="text-sm font-medium text-gray-500">{text.shop}: {product.shop}</h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-full"
+            className="p-1.5 hover:bg-gray-100 rounded-full"
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5 text-gray-500" />
           </button>
         </div>
 
-        {/* Content */}
-        <div className="p-4 overflow-y-auto max-h-[calc(90vh-180px)]">
-          {loading ? (
-            <div className="flex items-center justify-center h-64">
-              <span className="text-gray-500">{text.loading}</span>
-            </div>
-          ) : (
-            <div className="grid md:grid-cols-2 gap-6">
-              {/* Left: Image */}
-              <div>
-                <div className="aspect-square bg-gray-100 rounded-xl overflow-hidden relative">
-                  <img
-                    src={product.image}
-                    alt={product.title}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x400?text=No+Image';
-                    }}
-                  />
-                  {savings && (
-                    <div className="absolute top-3 left-3 bg-red-500 text-white text-sm px-3 py-1.5 rounded-full flex items-center gap-1">
-                      <TicketPercent className="w-4 h-4" />
-                      <span>{text.save} ¥{savings}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Right: Info */}
-              <div>
-                <h1 className="text-xl font-bold text-gray-900 mb-4">
-                  {product.title}
-                </h1>
-
-                {/* Price */}
-                <div className="mb-4">
-                  <div className="flex items-baseline gap-3">
-                    <span className="text-3xl font-bold text-red-600">
-                      ¥{product.price}
-                    </span>
-                    {product.originalPrice && product.originalPrice > product.price && (
-                      <span className="text-lg text-gray-400 line-through">
-                        ¥{product.originalPrice}
-                      </span>
-                    )}
-                  </div>
-                  {savings && (
-                    <div className="mt-1 text-sm text-red-500">
-                      {text.save} ¥{savings}
-                    </div>
-                  )}
-                </div>
-
-                {/* Shop & Sales */}
-                <div className="space-y-2 mb-6 text-sm text-gray-600">
-                  <div className="flex justify-between">
-                    <span>{text.shop}</span>
-                    <span className="font-medium text-gray-900">{product.shop}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>{text.sales}</span>
-                    <span className="font-medium text-gray-900">{product.sales}</span>
-                  </div>
-                </div>
-
-                {/* Coupon Info */}
-                {product.coupon && (
-                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <div className="flex items-center gap-2 text-red-700 text-sm">
-                      <TicketPercent className="w-4 h-4" />
-                      <span>{product.coupon}</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="flex items-center justify-between p-4 border-t bg-gray-50">
-          <button
-            onClick={onClose}
-            className="px-6 py-2 text-gray-600 hover:text-gray-900"
-          >
-            {text.close}
-          </button>
-          <div className="flex gap-3">
-            <button
-              onClick={() => {
-                onGetCoupon(product);
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto">
+          {/* Image */}
+          <div className="aspect-square bg-gray-100 relative">
+            <img
+              src={product.image}
+              alt={product.title}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x400?text=No+Image';
               }}
-              className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600"
-            >
-              <ExternalLink className="w-4 h-4" />
-              <span>{text.getCoupon}</span>
-            </button>
-            <button
-              onClick={() => {
-                onAddToCart(product);
-                onClose();
-              }}
-              className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700"
-            >
-              <ShoppingCart className="w-4 h-4" />
-              <span>{text.addToList}</span>
-            </button>
+            />
+            {savings && (
+              <div className="absolute top-3 left-3 bg-red-500 text-white text-xs px-3 py-1.5 rounded-full flex items-center gap-1">
+                <TicketPercent className="w-3 h-3" />
+                <span>{text.save} ¥{savings}</span>
+              </div>
+            )}
           </div>
+
+          {/* Info */}
+          <div className="p-4 space-y-4">
+            {/* Title */}
+            <h1 className="text-base font-semibold text-gray-900 leading-snug">
+              {product.brandName && <span className="text-red-500">{product.brandName}</span>} {product.title}
+            </h1>
+
+            {/* Price */}
+            <div className="flex items-baseline gap-2">
+              <span className="text-xs text-red-500">¥</span>
+              <span className="text-2xl font-bold text-red-500">{product.price}</span>
+              {product.originalPrice && product.originalPrice > product.price && (
+                <span className="text-sm text-gray-400 line-through ml-2">
+                  ¥{product.originalPrice}
+                </span>
+              )}
+              {savings && (
+                <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded ml-auto">
+                  {text.save}¥{savings}
+                </span>
+              )}
+            </div>
+
+            {/* Meta Info */}
+            <div className="flex items-center gap-4 text-xs text-gray-500">
+              <span>{text.sales}: {product.sales}</span>
+              {product.shopType === 1 && (
+                <span className="text-red-500 font-medium">天猫</span>
+              )}
+            </div>
+
+            {/* Coupon */}
+            {product.coupon && (
+              <div className="p-3 bg-red-50 border border-red-100 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <TicketPercent className="w-4 h-4 text-red-500" />
+                  <span className="text-sm text-red-700 font-medium">{product.coupon}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Description */}
+            {product.desc && (
+              <div className="text-sm text-gray-600 leading-relaxed">
+                <span className="font-medium text-gray-800">{text.desc}:</span>
+                <p className="mt-1">{product.desc}</p>
+              </div>
+            )}
+
+            {/* Quantity Selector */}
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-gray-600">{text.quantity}</span>
+              <div className="flex items-center border rounded-lg">
+                <button
+                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  className="p-2 hover:bg-gray-50"
+                >
+                  <Minus className="w-4 h-4" />
+                </button>
+                <span className="w-10 text-center text-sm font-medium">{quantity}</span>
+                <button
+                  onClick={() => setQuantity(quantity + 1)}
+                  className="p-2 hover:bg-gray-50"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Sticky Footer */}
+        <div className="border-t bg-white p-4">
+          <button
+            onClick={handleAddToCart}
+            className={`w-full py-3 rounded-xl font-medium text-white transition-colors flex items-center justify-center gap-2 ${
+              added 
+                ? 'bg-green-500' 
+                : 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600'
+            }`}
+          >
+            <ShoppingCart className="w-5 h-5" />
+            <span>{added ? text.added : text.addToList}</span>
+          </button>
         </div>
       </div>
     </div>
