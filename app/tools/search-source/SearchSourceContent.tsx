@@ -17,6 +17,10 @@ interface Product {
   link: string;
   coupon?: string;
   hotKeyword?: string;
+  commissionRate?: number;
+  couponInfo?: string;
+  shopType?: number;
+  monthSales?: number;
 }
 
 export default function SearchSourcePage() {
@@ -339,27 +343,34 @@ export default function SearchSourcePage() {
                   {hotProducts.map(product => {
                     const savings = getSavings(product);
                     return (
-                      <div key={product.id} className="bg-white border rounded-xl overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                      <div key={product.id} className="bg-white border rounded-xl overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group"
                         onClick={() => setSelectedProduct(product)}>
-                        <div className="aspect-square bg-gray-100 relative">
+                        <div className="aspect-square bg-gray-100 relative overflow-hidden">
                           <img
                             src={product.image}
                             alt={product.title}
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                             onError={(e) => {
                               (e.target as HTMLImageElement).src = 'https://via.placeholder.com/300x300?text=No+Image';
                             }}
                           />
                           {product.hotKeyword && (
-                            <div className="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                            <div className="absolute top-2 left-2 bg-gradient-to-r from-red-500 to-orange-500 text-white text-xs px-2 py-1 rounded-full font-medium">
                               🔥 {product.hotKeyword}
+                            </div>
+                          )}
+                          {product.commissionRate && (
+                            <div className="absolute bottom-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full">
+                              {product.commissionRate}% 佣金
                             </div>
                           )}
                         </div>
                         <div className="p-3">
-                          <h3 className="text-sm font-medium text-gray-900 line-clamp-2">
+                          <h3 className="text-sm font-medium text-gray-900 line-clamp-2 group-hover:text-blue-600">
                             {product.title}
                           </h3>
+                          
+                          {/* Price Section */}
                           <div className="mt-2 flex items-baseline gap-2">
                             <span className="text-lg font-bold text-red-600">
                               ¥{product.price}
@@ -369,12 +380,30 @@ export default function SearchSourcePage() {
                                 ¥{product.originalPrice}
                               </span>
                             )}
+                            {savings && (
+                              <span className="text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded">
+                                省¥{savings}
+                              </span>
+                            )}
                           </div>
-                          <div className="flex items-center justify-between mt-1">
+                          
+                          {/* Meta info */}
+                          <div className="flex items-center gap-2 mt-1.5">
                             <span className="text-xs text-gray-500">
-                              {product.sales} {text.sales}
+                              {product.monthSales || product.sales} sold
                             </span>
+                            {product.shopType === 1 && (
+                              <span className="text-xs bg-red-50 text-red-600 px-1.5 py-0.5 rounded">天猫</span>
+                            )}
                           </div>
+                          
+                          {/* Coupon badge */}
+                          {product.couponInfo && (
+                            <div className="mt-2 flex items-center gap-1 text-xs text-orange-600">
+                              <TicketPercent className="w-3 h-3" />
+                              <span>{product.couponInfo}</span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     );

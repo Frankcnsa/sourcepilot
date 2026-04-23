@@ -66,8 +66,12 @@ export async function POST(request: NextRequest) {
       image: item.mainPic || item.pic || item.pictUrl || item.image || '',
       shop: item.shopTitle || item.nick || item.shop || 'Taobao Shop',
       sales: item.monthSales || item.volume || item.sales || '0',
+      monthSales: item.monthSales || item.volume || 0,
       link: item.couponLink || item.itemLink || item.url || item.link || '',
       coupon: item.couponInfo || item.couponAmount || item.coupon || '',
+      couponInfo: item.couponInfo || item.couponAmount || '',
+      commissionRate: item.commissionRate || 0,
+      shopType: item.shopType || 0
     }));
 
     // Translate back if needed
