@@ -70,8 +70,10 @@ export async function POST(request: NextRequest) {
       link: item.couponLink || item.itemLink || item.url || item.link || '',
       coupon: item.couponInfo || item.couponAmount || item.coupon || '',
       couponInfo: item.couponInfo || item.couponAmount || '',
-      commissionRate: item.commissionRate || 0,
-      shopType: item.shopType || 0
+      shopType: item.shopType || 0,
+      desc: item.desc || '',
+      brandName: item.brandName || '',
+      couponLink: item.couponLink || ''
     }));
 
     // Translate back if needed

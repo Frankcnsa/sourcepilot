@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Trash2, FileText, CheckSquare, Square, Send, ExternalLink, ShoppingCart } from 'lucide-react';
+import { Trash2, FileText, CheckSquare, Square, Send, ExternalLink, ShoppingCart, Store, ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 interface SourcingItem {
@@ -16,12 +16,7 @@ interface SourcingItem {
   created_at: string;
 }
 
-interface User {
-  email?: string;
-  id: string;
-}
-
-export default function SourcingListPage({ user }: { user: User }) {
+export default function SourcingListPage() {
   const router = useRouter();
   const [items, setItems] = useState<SourcingItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,84 +28,44 @@ export default function SourcingListPage({ user }: { user: User }) {
   // 翻译文本
   const t = {
     en: {
-      title: 'Sourcing List',
+      title: 'Sourcing Cart',
       back: 'Back',
-      empty: 'Your sourcing list is empty',
+      empty: 'Your sourcing cart is empty',
       startSourcing: 'Start Sourcing',
       selectAll: 'Select All',
       delete: 'Delete',
-      generatePdf: 'Generate PDF Report',
+      generatePdf: 'Generate Report',
       price: 'Price',
       shop: 'Shop',
       added: 'Added',
       sendTo: 'Send to',
-      pdfSent: 'PDF sent to your email!',
-      selectItems: 'Please select items first',
-      buyOnTaobao: 'Buy on Taobao'
+      pdfSent: 'PDF sent!',
+      selectItems: 'Select items first',
+      buyOnTaobao: 'Go to Taobao',
+      total: 'Total',
+      items: 'items',
+      deleteConfirm: 'Delete selected items?',
+      manage: 'Manage'
     },
     zh: {
       title: '采购清单',
       back: '返回',
-      empty: '您的采购清单为空',
-      startSourcing: '开始采购',
+      empty: '清单为空',
+      startSourcing: '去采购',
       selectAll: '全选',
       delete: '删除',
-      generatePdf: '生成PDF报告',
+      generatePdf: '生成报告',
       price: '价格',
       shop: '店铺',
       added: '添加时间',
       sendTo: '发送至',
-      pdfSent: 'PDF已发送到您的邮箱！',
+      pdfSent: '报告已发送！',
       selectItems: '请先选择商品',
-      buyOnTaobao: '去淘宝购买'
-    },
-    ar: {
-      title: 'قائمة المصادر',
-      back: 'رجوع',
-      empty: 'قائمة المصادر فارغة',
-      startSourcing: 'ابدأ الت sourcing',
-      selectAll: 'اختر الكل',
-      delete: 'حذف',
-      generatePdf: 'إنشاء تقرير PDF',
-      price: 'السعر',
-      shop: 'المتجر',
-      added: 'تاريخ الإضافة',
-      sendTo: 'إرسال إلى',
-      pdfSent: 'تم إرسال PDF إلى بريدك الإلكتروني!',
-      selectItems: 'الرجاء اختيار العناصر أولاً',
-      buyOnTaobao: 'اشتري على تاوباو'
-    },
-    ru: {
-      title: 'Список закупок',
-      back: 'Назад',
-      empty: 'Ваш список закупок пуст',
-      startSourcing: 'Начать закупку',
-      selectAll: 'Выбрать все',
-      delete: 'Удалить',
-      generatePdf: 'Создать PDF отчет',
-      price: 'Цена',
-      shop: 'Магазин',
-      added: 'Добавлено',
-      sendTo: 'Отправить',
-      pdfSent: 'PDF отправлен на ваш email!',
-      selectItems: 'Пожалуйста, сначала выберите товары',
-      buyOnTaobao: 'Купить на Taobao'
-    },
-    es: {
-      title: 'Lista de abastecimiento',
-      back: 'Volver',
-      empty: 'Su lista de abastecimiento está vacía',
-      startSourcing: 'Iniciar abastecimiento',
-      selectAll: 'Seleccionar todo',
-      delete: 'Eliminar',
-      generatePdf: 'Generar informe PDF',
-      price: 'Precio',
-      shop: 'Tienda',
-      added: 'Añadido',
-      sendTo: 'Enviar a',
-      pdfSent: '¡PDF enviado a su correo!',
-      selectItems: 'Por favor, seleccione artículos primero',
-      buyOnTaobao: 'Comprar en Taobao'
+      buyOnTaobao: '去淘宝',
+      total: '共',
+      items: '件商品',
+      deleteConfirm: '删除选中的商品？',
+      manage: '管理'
     }
   };
 
@@ -156,9 +111,11 @@ export default function SourcingListPage({ user }: { user: User }) {
 
   // 批量删除
   const deleteSelected = async () => {
+    if (!confirm(text.deleteConfirm)) return;
     for (const id of selectedItems) {
       await deleteItem(id);
     }
+    setSelectedItems(new Set());
   };
 
   // 切换选择
@@ -199,7 +156,6 @@ export default function SourcingListPage({ user }: { user: User }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           items: selectedProducts,
-          to: user.email,
           lang: currentLang
         })
       });
@@ -211,23 +167,20 @@ export default function SourcingListPage({ user }: { user: User }) {
       }
     } catch (error) {
       console.error('Failed to generate PDF:', error);
-      alert('Failed to generate PDF');
     } finally {
       setGeneratingPdf(false);
     }
   };
 
-  // 去淘宝购买（转链）
+  // 去淘宝购买
   const handleBuyOnTaobao = async (item: SourcingItem) => {
     setBuyingItem(item.id);
     try {
-      // 如果已经有pid_link，直接打开
       if (item.pid_link) {
         window.open(item.pid_link, '_blank');
         return;
       }
 
-      // 否则调用转链接口
       const response = await fetch('/api/convert-link', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -240,15 +193,11 @@ export default function SourcingListPage({ user }: { user: User }) {
       const data = await response.json();
       if (data.success && (data.shortUrl || data.longUrl || data.couponClickUrl)) {
         const url = data.couponClickUrl || data.shortUrl || data.longUrl;
-        
-        // 更新item的pid_link
         setItems(prev => prev.map(i => 
           i.id === item.id ? { ...i, pid_link: url } : i
         ));
-        
         window.open(url, '_blank');
       } else {
-        // fallback: 直接打开商品链接
         window.open(item.product_url, '_blank');
       }
     } catch (error) {
@@ -259,10 +208,20 @@ export default function SourcingListPage({ user }: { user: User }) {
     }
   };
 
+  // 按店铺分组
+  const groupedItems = items.reduce((groups, item) => {
+    const shop = item.shop_name || 'Unknown Shop';
+    if (!groups[shop]) {
+      groups[shop] = [];
+    }
+    groups[shop].push(item);
+    return groups;
+  }, {} as Record<string, SourcingItem[]>);
+
   if (loading) {
     return (
       <div className="h-full bg-gray-50 flex items-center justify-center">
-        <span className="text-gray-500">Loading...</span>
+        <div className="animate-spin w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full" />
       </div>
     );
   }
@@ -270,144 +229,164 @@ export default function SourcingListPage({ user }: { user: User }) {
   if (items.length === 0) {
     return (
       <div className="h-full bg-gray-50 flex flex-col items-center justify-center p-4">
-        <div className="text-center max-w-md">
-          <ShoppingCart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-500 mb-4">{text.empty}</p>
-          <button
-            onClick={() => router.push('/tools/search-source')}
-            className="px-6 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700"
-          >
-            {text.startSourcing}
-          </button>
-        </div>
+        <ShoppingCart className="w-16 h-16 text-gray-300 mb-4" />
+        <p className="text-gray-500 mb-4">{text.empty}</p>
+        <button
+          onClick={() => router.push('/tools/search-source')}
+          className="px-6 py-2 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl hover:from-orange-600 hover:to-red-600"
+        >
+          {text.startSourcing}
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="h-full bg-gray-50">
-      {/* Toolbar */}
+    <div className="h-full bg-gray-50 flex flex-col">
+      {/* Header */}
       <div className="bg-white border-b px-4 py-3 flex items-center justify-between sticky top-0 z-10">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
+          <button onClick={() => router.back()} className="p-1 hover:bg-gray-100 rounded-full">
+            <ArrowLeft className="w-5 h-5 text-gray-600" />
+          </button>
           <h1 className="text-lg font-semibold text-gray-900">{text.title}</h1>
+          <span className="text-sm text-gray-400">({items.length})</span>
         </div>
         
         <div className="flex items-center gap-2">
+          {selectedItems.size > 0 && (
+            <button
+              onClick={deleteSelected}
+              className="px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-lg"
+            >
+              {text.delete}
+            </button>
+          )}
           <button
             onClick={toggleSelectAll}
-            className="flex items-center gap-2 px-3 py-2 text-sm border rounded-lg hover:bg-gray-50"
+            className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50 rounded-lg"
           >
             {selectedItems.size === items.length ? (
-              <CheckSquare className="w-4 h-4" />
+              <CheckSquare className="w-4 h-4 text-blue-500" />
             ) : (
               <Square className="w-4 h-4" />
             )}
             <span>{text.selectAll}</span>
           </button>
-          
-          {selectedItems.size > 0 && (
-            <button
-              onClick={deleteSelected}
-              className="flex items-center gap-2 px-3 py-2 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50"
-            >
-              <Trash2 className="w-4 h-4" />
-              <span>{text.delete}</span>
-            </button>
-          )}
-          
-          <button
-            onClick={generatePdf}
-            disabled={generatingPdf || selectedItems.size === 0}
-            className="flex items-center gap-2 px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-          >
-            {generatingPdf ? (
-              <span>...</span>
-            ) : (
-              <>
-                <FileText className="w-4 h-4" />
-                <span>{text.generatePdf}</span>
-              </>
-            )}
-          </button>
         </div>
       </div>
 
-      {/* Items List */}
-      <div className="max-w-4xl mx-auto px-4 py-6">
-        <div className="space-y-4">
-          {items.map(item => (
-            <div
-              key={item.id}
-              className={`bg-white border rounded-xl p-4 flex gap-4 ${
-                selectedItems.has(item.id) ? 'border-blue-500 bg-blue-50' : ''
-              }`}
-            >
-              <button
-                onClick={() => toggleSelection(item.id)}
-                className="flex-shrink-0"
-              >
-                {selectedItems.has(item.id) ? (
-                  <CheckSquare className="w-5 h-5 text-blue-600" />
-                ) : (
-                  <Square className="w-5 h-5 text-gray-400" />
-                )}
-              </button>
-              
-              <div className="w-24 h-24 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-                <img
-                  src={item.image_url}
-                  alt={item.title}
-                  className="w-full h-full object-cover"
-                />
+      {/* Items List - Grouped by Shop */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-4xl mx-auto px-3 py-4 space-y-4">
+          {Object.entries(groupedItems).map(([shopName, shopItems]) => (
+            <div key={shopName} className="bg-white rounded-xl border overflow-hidden">
+              {/* Shop Header */}
+              <div className="px-3 py-2.5 border-b bg-gray-50 flex items-center gap-2">
+                <Store className="w-4 h-4 text-gray-500" />
+                <span className="text-sm font-medium text-gray-700">{shopName}</span>
               </div>
               
-              <div className="flex-1 min-w-0">
-                <h3 className="font-medium text-gray-900 line-clamp-2">
-                  {item.title}
-                </h3>
-                <div className="mt-2 flex items-center gap-4 text-sm text-gray-500">
-                  <span className="text-lg font-bold text-red-600">
-                    ¥{item.price}
-                  </span>
-                  <span>|</span>
-                  <span>{text.shop}: {item.shop_name}</span>
-                </div>
-                <div className="mt-1 text-xs text-gray-400">
-                  {text.added}: {new Date(item.created_at).toLocaleDateString()}
-                </div>
+              {/* Items */}
+              <div className="divide-y divide-gray-100">
+                {shopItems.map(item => (
+                  <div
+                    key={item.id}
+                    className={`p-3 flex gap-3 ${
+                      selectedItems.has(item.id) ? 'bg-blue-50/50' : ''
+                    }`}
+                  >
+                    {/* Checkbox */}
+                    <button
+                      onClick={() => toggleSelection(item.id)}
+                      className="flex-shrink-0 self-center"
+                    >
+                      {selectedItems.has(item.id) ? (
+                        <CheckSquare className="w-5 h-5 text-blue-500" />
+                      ) : (
+                        <Square className="w-5 h-5 text-gray-300" />
+                      )}
+                    </button>
+                    
+                    {/* Image */}
+                    <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                      <img
+                        src={item.image_url}
+                        alt={item.title}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = 'https://via.placeholder.com/150x150?text=No+Image';
+                        }}
+                      />
+                    </div>
+                    
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm text-gray-800 line-clamp-2 leading-snug">
+                        {item.title}
+                      </h3>
+                      <div className="mt-1.5 flex items-center justify-between">
+                        <span className="text-lg font-bold text-red-500">
+                          ¥{item.price}
+                        </span>
+                        <button
+                          onClick={() => deleteItem(item.id)}
+                          className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
               
-              <div className="flex-shrink-0 flex flex-col gap-2">
+              {/* Shop Action Bar */}
+              <div className="px-3 py-2.5 border-t bg-gray-50 flex items-center justify-between">
+                <span className="text-xs text-gray-500">
+                  {shopItems.length} {text.items}
+                </span>
                 <button
-                  onClick={() => handleBuyOnTaobao(item)}
-                  disabled={buyingItem === item.id}
-                  className="flex items-center gap-1 px-3 py-2 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50"
+                  onClick={() => handleBuyOnTaobao(shopItems[0])}
+                  disabled={buyingItem === shopItems[0].id}
+                  className="px-4 py-1.5 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600 disabled:opacity-50 flex items-center gap-1"
                 >
-                  <ExternalLink className="w-4 h-4" />
-                  <span>{buyingItem === item.id ? '...' : text.buyOnTaobao}</span>
-                </button>
-                <button
-                  onClick={() => deleteItem(item.id)}
-                  className="flex items-center justify-center gap-1 p-2 text-gray-400 hover:text-red-600 border rounded-lg"
-                >
-                  <Trash2 className="w-4 h-4" />
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>{buyingItem === shopItems[0].id ? '...' : text.buyOnTaobao}</span>
                 </button>
               </div>
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Bottom Action Bar */}
+      <div className="bg-white border-t px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={toggleSelectAll}
+            className="flex items-center gap-1.5 text-sm text-gray-600"
+          >
+            {selectedItems.size === items.length ? (
+              <CheckSquare className="w-5 h-5 text-blue-500" />
+            ) : (
+              <Square className="w-5 h-5 text-gray-300" />
+            )}
+            <span>{text.selectAll}</span>
+          </button>
+          <span className="text-sm text-gray-400">
+            {text.total} {selectedItems.size} {text.items}
+          </span>
+        </div>
         
-        {/* PDF Info */}
-        {selectedItems.size > 0 && (
-          <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
-            <div className="flex items-center gap-2 text-sm text-blue-800">
-              <Send className="w-4 h-4" />
-              <span>
-                {text.sendTo}: {user.email || 'your email'}
-              </span>
-            </div>
-          </div>
-        )}
+        <button
+          onClick={generatePdf}
+          disabled={generatingPdf || selectedItems.size === 0}
+          className="px-5 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-sm rounded-xl hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 flex items-center gap-2 font-medium"
+        >
+          <FileText className="w-4 h-4" />
+          <span>{generatingPdf ? '...' : text.generatePdf}</span>
+        </button>
       </div>
     </div>
   );

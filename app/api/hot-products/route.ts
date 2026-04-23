@@ -43,8 +43,10 @@ export async function GET(request: Request) {
       coupon: item.couponInfo || item.couponAmount || '',
       couponInfo: item.couponInfo || item.couponAmount || '',
       hotKeyword: item._hotKeyword || '',
-      commissionRate: item.commissionRate || 0,
-      shopType: item.shopType || 0
+      shopType: item.shopType || 0,
+      desc: item.desc || '',
+      brandName: item.brandName || '',
+      couponLink: item.couponLink || ''
     }));
 
     // Translate titles if not Chinese
