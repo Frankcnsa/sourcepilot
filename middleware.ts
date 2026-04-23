@@ -16,6 +16,7 @@ const publicApiPrefixes = [
   '/api/search',
   '/api/convert-link',
   '/api/sourcing-items',
+  '/api/hot-products',
 ];
 
 export async function middleware(request: NextRequest) {
