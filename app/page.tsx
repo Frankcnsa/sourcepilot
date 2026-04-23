@@ -45,9 +45,9 @@ export default function HomePage() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // MVP阶段：点击输入框直接跳转到 /chat
+  // MVP阶段：点击输入框直接跳转到 /tools/consultation
   const handleInputClick = () => {
-    router.push('/chat');
+    router.push('/tools/consultation');
   };
 
   return (
@@ -91,12 +91,6 @@ export default function HomePage() {
           </div>
           
           <div className="flex items-center gap-2">
-            <Link 
-              href="/register"
-              className="px-4 py-2 text-sm bg-[#4F6DF5] hover:bg-[#4353C7] text-white rounded-xl transition-colors font-medium"
-            >
-              Get Started
-            </Link>
             <Link 
               href="/login"
               className="px-4 py-2 text-sm text-[#4F6DF5] hover:bg-blue-50 rounded-xl transition-colors font-medium"

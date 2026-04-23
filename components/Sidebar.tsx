@@ -77,13 +77,13 @@ export default function Sidebar({ isOpen, onClose, isMobile = false, onNewChat, 
     { 
       icon: MessageSquare, 
       label: 'Consultation', 
-      href: '/chat',
+      href: '/tools/consultation',
       id: 'consultation'
     },
     { 
       icon: FileText, 
       label: 'My Reports', 
-      href: '/reports',
+      href: '/tools/reports',
       id: 'my-reports'
     },
   ];
@@ -147,7 +147,7 @@ export default function Sidebar({ isOpen, onClose, isMobile = false, onNewChat, 
         {/* New Chat 按钮 - 固定，点击返回首页 */}
         <div className="px-3 mb-2 flex-shrink-0">
           <Link 
-            href="/"
+            href="/tools/consultation"
             onClick={() => isMobile && onClose()}
             className="w-full flex items-center gap-2 px-3 py-2.5 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors text-sm font-medium text-gray-700 shadow-sm hover:shadow-md"
           >
