@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Trash2, FileText, ChevronLeft, CheckSquare, Square, Send, ExternalLink } from 'lucide-react';
+import { Trash2, FileText, CheckSquare, Square, Send, ExternalLink } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 interface SourcingItem {
@@ -261,7 +261,7 @@ export default function SourcingListPage({ user }: { user: User }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="h-full bg-gray-50 flex items-center justify-center">
         <span className="text-gray-500">Loading...</span>
       </div>
     );
@@ -269,8 +269,9 @@ export default function SourcingListPage({ user }: { user: User }) {
 
   if (items.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
-        <div className="text-center">
+      <div className="h-full bg-gray-50 flex flex-col items-center justify-center p-4">
+        <div className="text-center max-w-md">
+          <ShoppingCart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
           <p className="text-gray-500 mb-4">{text.empty}</p>
           <button
             onClick={() => router.push('/tools/search-source')}
@@ -284,61 +285,52 @@ export default function SourcingListPage({ user }: { user: User }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => router.push('/tools/search-source')}
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
-            >
-              <ChevronLeft className="w-5 h-5" />
-              <span>{text.back}</span>
-            </button>
-            <h1 className="text-xl font-semibold text-gray-900">{text.title}</h1>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <button
-              onClick={toggleSelectAll}
-              className="flex items-center gap-2 px-4 py-2 text-sm border rounded-lg hover:bg-gray-50"
-            >
-              {selectedItems.size === items.length ? (
-                <CheckSquare className="w-4 h-4" />
-              ) : (
-                <Square className="w-4 h-4" />
-              )}
-              <span>{text.selectAll}</span>
-            </button>
-            
-            {selectedItems.size > 0 && (
-              <button
-                onClick={deleteSelected}
-                className="flex items-center gap-2 px-4 py-2 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50"
-              >
-                <Trash2 className="w-4 h-4" />
-                <span>{text.delete}</span>
-              </button>
-            )}
-            
-            <button
-              onClick={generatePdf}
-              disabled={generatingPdf || selectedItems.size === 0}
-              className="flex items-center gap-2 px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-            >
-              {generatingPdf ? (
-                <span>...</span>
-              ) : (
-                <>
-                  <FileText className="w-4 h-4" />
-                  <span>{text.generatePdf}</span>
-                </>
-              )}
-            </button>
-          </div>
+    <div className="h-full bg-gray-50">
+      {/* Toolbar */}
+      <div className="bg-white border-b px-4 py-3 flex items-center justify-between sticky top-0 z-10">
+        <div className="flex items-center gap-4">
+          <h1 className="text-lg font-semibold text-gray-900">{text.title}</h1>
         </div>
-      </header>
+        
+        <div className="flex items-center gap-2">
+          <button
+            onClick={toggleSelectAll}
+            className="flex items-center gap-2 px-3 py-2 text-sm border rounded-lg hover:bg-gray-50"
+          >
+            {selectedItems.size === items.length ? (
+              <CheckSquare className="w-4 h-4" />
+            ) : (
+              <Square className="w-4 h-4" />
+            )}
+            <span>{text.selectAll}</span>
+          </button>
+          
+          {selectedItems.size > 0 && (
+            <button
+              onClick={deleteSelected}
+              className="flex items-center gap-2 px-3 py-2 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span>{text.delete}</span>
+            </button>
+          )}
+          
+          <button
+            onClick={generatePdf}
+            disabled={generatingPdf || selectedItems.size === 0}
+            className="flex items-center gap-2 px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+          >
+            {generatingPdf ? (
+              <span>...</span>
+            ) : (
+              <>
+                <FileText className="w-4 h-4" />
+                <span>{text.generatePdf}</span>
+              </>
+            )}
+          </button>
+        </div>
+      </div>
 
       {/* Items List */}
       <div className="max-w-4xl mx-auto px-4 py-6">
