@@ -9,6 +9,10 @@ const publicPaths = [
   '/forgot-password',
   '/reset-password',
   '/auth/confirm',
+  '/tools/search-source',
+  '/tools/sourcing-list',
+  '/tools/image-design',
+  '/tools/consultation',
 ];
 
 // 公开API路由（无需登录）
