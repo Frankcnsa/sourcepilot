@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Trash2, FileText, ChevronLeft, CheckSquare, Square, Send } from 'lucide-react';
+import { Trash2, FileText, ChevronLeft, CheckSquare, Square, Send, ExternalLink } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 interface SourcingItem {
@@ -28,6 +28,7 @@ export default function SourcingListPage({ user }: { user: User }) {
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [currentLang, setCurrentLang] = useState('en');
+  const [buyingItem, setBuyingItem] = useState<string | null>(null);
 
   // 翻译文本
   const t = {
@@ -44,7 +45,8 @@ export default function SourcingListPage({ user }: { user: User }) {
       added: 'Added',
       sendTo: 'Send to',
       pdfSent: 'PDF sent to your email!',
-      selectItems: 'Please select items first'
+      selectItems: 'Please select items first',
+      buyOnTaobao: 'Buy on Taobao'
     },
     zh: {
       title: '采购清单',
@@ -59,7 +61,8 @@ export default function SourcingListPage({ user }: { user: User }) {
       added: '添加时间',
       sendTo: '发送至',
       pdfSent: 'PDF已发送到您的邮箱！',
-      selectItems: '请先选择商品'
+      selectItems: '请先选择商品',
+      buyOnTaobao: '去淘宝购买'
     },
     ar: {
       title: 'قائمة المصادر',
@@ -74,7 +77,8 @@ export default function SourcingListPage({ user }: { user: User }) {
       added: 'تاريخ الإضافة',
       sendTo: 'إرسال إلى',
       pdfSent: 'تم إرسال PDF إلى بريدك الإلكتروني!',
-      selectItems: 'الرجاء اختيار العناصر أولاً'
+      selectItems: 'الرجاء اختيار العناصر أولاً',
+      buyOnTaobao: 'اشتري على تاوباو'
     },
     ru: {
       title: 'Список закупок',
@@ -89,7 +93,8 @@ export default function SourcingListPage({ user }: { user: User }) {
       added: 'Добавлено',
       sendTo: 'Отправить',
       pdfSent: 'PDF отправлен на ваш email!',
-      selectItems: 'Пожалуйста, сначала выберите товары'
+      selectItems: 'Пожалуйста, сначала выберите товары',
+      buyOnTaobao: 'Купить на Taobao'
     },
     es: {
       title: 'Lista de abastecimiento',
@@ -104,7 +109,8 @@ export default function SourcingListPage({ user }: { user: User }) {
       added: 'Añadido',
       sendTo: 'Enviar a',
       pdfSent: '¡PDF enviado a su correo!',
-      selectItems: 'Por favor, seleccione artículos primero'
+      selectItems: 'Por favor, seleccione artículos primero',
+      buyOnTaobao: 'Comprar en Taobao'
     }
   };
 
@@ -208,6 +214,48 @@ export default function SourcingListPage({ user }: { user: User }) {
       alert('Failed to generate PDF');
     } finally {
       setGeneratingPdf(false);
+    }
+  };
+
+  // 去淘宝购买（转链）
+  const handleBuyOnTaobao = async (item: SourcingItem) => {
+    setBuyingItem(item.id);
+    try {
+      // 如果已经有pid_link，直接打开
+      if (item.pid_link) {
+        window.open(item.pid_link, '_blank');
+        return;
+      }
+
+      // 否则调用转链接口
+      const response = await fetch('/api/convert-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          goodsId: item.product_id,
+          itemId: item.product_id
+        })
+      });
+
+      const data = await response.json();
+      if (data.success && (data.shortUrl || data.longUrl || data.couponClickUrl)) {
+        const url = data.couponClickUrl || data.shortUrl || data.longUrl;
+        
+        // 更新item的pid_link
+        setItems(prev => prev.map(i => 
+          i.id === item.id ? { ...i, pid_link: url } : i
+        ));
+        
+        window.open(url, '_blank');
+      } else {
+        // fallback: 直接打开商品链接
+        window.open(item.product_url, '_blank');
+      }
+    } catch (error) {
+      console.error('Buy on Taobao failed:', error);
+      window.open(item.product_url, '_blank');
+    } finally {
+      setBuyingItem(null);
     }
   };
 
@@ -337,12 +385,22 @@ export default function SourcingListPage({ user }: { user: User }) {
                 </div>
               </div>
               
-              <button
-                onClick={() => deleteItem(item.id)}
-                className="flex-shrink-0 p-2 text-gray-400 hover:text-red-600"
-              >
-                <Trash2 className="w-5 h-5" />
-              </button>
+              <div className="flex-shrink-0 flex flex-col gap-2">
+                <button
+                  onClick={() => handleBuyOnTaobao(item)}
+                  disabled={buyingItem === item.id}
+                  className="flex items-center gap-1 px-3 py-2 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  <span>{buyingItem === item.id ? '...' : text.buyOnTaobao}</span>
+                </button>
+                <button
+                  onClick={() => deleteItem(item.id)}
+                  className="flex items-center justify-center gap-1 p-2 text-gray-400 hover:text-red-600 border rounded-lg"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           ))}
         </div>

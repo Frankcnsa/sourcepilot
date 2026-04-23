@@ -1,6 +1,23 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
+// 公开页面（无需登录）
+const publicPaths = [
+  '/',
+  '/login',
+  '/register',
+  '/forgot-password',
+  '/reset-password',
+  '/auth/confirm',
+];
+
+// 公开API路由（无需登录）
+const publicApiPrefixes = [
+  '/api/search',
+  '/api/convert-link',
+  '/api/sourcing-items',
+];
+
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
@@ -24,8 +41,28 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // 刷新session
+  // 刷新 session
   const { data: { session } } = await supabase.auth.getSession();
+
+  const pathname = request.nextUrl.pathname;
+
+  // 检查是否为公开页面
+  const isPublicPath = publicPaths.some(path => pathname === path || pathname.startsWith(path + '/'));
+  
+  // 检查是否为公开API
+  const isPublicApi = publicApiPrefixes.some(prefix => pathname.startsWith(prefix));
+
+  // 未登录且访问非公开页面/非公开API → 重定向到登录
+  if (!session && !isPublicPath && !isPublicApi) {
+    const loginUrl = new URL('/login', request.url);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  // 已登录且访问登录页 → 重定向到首页
+  if (session && pathname === '/login') {
+    const homeUrl = new URL('/', request.url);
+    return NextResponse.redirect(homeUrl);
+  }
 
   return supabaseResponse;
 }
