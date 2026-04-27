@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
 import { ArrowLeft, ShoppingCart, Heart, Share2 } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 interface ProductDetail {
   id: string;
@@ -31,6 +32,21 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentLang, setCurrentLang] = useState('en');
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+
+  // 身份验证检查
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        // 未登录，跳转到登录页并带回跳地址
+        router.push(`/login?redirect=/product/${id}`);
+        return;
+      }
+      setIsAuthenticated(true);
+    };
+    checkAuth();
+  }, [id, router]);
 
   useEffect(() => {
     // Detect language from browser
@@ -38,8 +54,10 @@ export default function ProductDetailPage() {
     const supported = ['zh', 'en', 'ar', 'ru', 'es'];
     setCurrentLang(supported.includes(lang) ? lang : 'en');
     
-    fetchProductDetail();
-  }, [id]);
+    if (isAuthenticated) {
+      fetchProductDetail();
+    }
+  }, [id, isAuthenticated]);
 
   const fetchProductDetail = async () => {
     try {
@@ -104,6 +122,15 @@ export default function ProductDetailPage() {
       console.error('Add to cart failed:', err);
     }
   };
+
+  // 身份验证检查中
+  if (isAuthenticated === null) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
