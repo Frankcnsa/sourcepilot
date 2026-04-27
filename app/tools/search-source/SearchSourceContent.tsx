@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Search, ShoppingCart } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { translateBatch } from '@/lib/aliyun-translate';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface Product {
   id: string;
@@ -50,6 +52,7 @@ export default function SearchSourcePage() {
   const [guessPage, setGuessPage] = useState(1);
   const [hasMoreGuess, setHasMoreGuess] = useState(true);
   const [loadingMoreGuess, setLoadingMoreGuess] = useState(false);
+  const { lang } = useLanguage();
 
   // 翻译文本
   const t = {
@@ -115,6 +118,9 @@ export default function SearchSourcePage() {
     }
   };
 
+  // 使用全局语言，但保留 currentLang 兼容（如果其他地方用到）
+  const currentLang = lang;
+
   const text = t[currentLang as keyof typeof t] || t.en;
 
   // 加载购物车数量
@@ -156,17 +162,35 @@ export default function SearchSourcePage() {
   // 加载猜你喜欢
   useEffect(() => {
     fetchGuessYouLike();
-  }, [currentLang]);
+  }, [lang]);
 
   const fetchGuessYouLike = async (pageNum = 1) => {
     if (pageNum === 1) setGuessLoading(true);
     else setLoadingMoreGuess(true);
     
     try {
-      const res = await fetch(`/api/guess-you-like?lang=${currentLang}&page=${pageNum}&limit=10`);
+      const res = await fetch(`/api/guess-you-like?lang=${lang}&page=${pageNum}&limit=10`);
       const data = await res.json();
       if (data.success) {
-        const newProducts = data.products || [];
+        let newProducts = data.products || [];
+        // 用阿里翻译机翻译商品标题和店铺名
+        if (lang !== 'zh') {
+          try {
+            const titles = newProducts.map((p: any) => p.title || '');
+            const shops = newProducts.map((p: any) => p.shop || '');
+            const [translatedTitles, translatedShops] = await Promise.all([
+              translateBatch(titles, 'zh', lang),
+              translateBatch(shops, 'zh', lang)
+            ]);
+            newProducts = newProducts.map((p: any, i: number) => ({
+              ...p,
+              title: translatedTitles[i] || p.title,
+              shop: translatedShops[i] || p.shop
+            }));
+          } catch (err) {
+            console.warn('Translation failed, using original:', err);
+          }
+        }
         if (pageNum === 1) {
           setGuessProducts(newProducts);
         } else {
@@ -199,13 +223,32 @@ export default function SearchSourcePage() {
           query: q,
           page: 1,
           pageSize: 20,
-          targetLang: currentLang
+          targetLang: lang
         })
       });
 
       const data = await response.json();
       if (data.success) {
-        setProducts(data.products || []);
+        let newProducts = data.products || [];
+        // 用阿里翻译机翻译商品标题和店铺名
+        if (lang !== 'zh') {
+          try {
+            const titles = newProducts.map((p: any) => p.title || '');
+            const shops = newProducts.map((p: any) => p.shop || '');
+            const [translatedTitles, translatedShops] = await Promise.all([
+              translateBatch(titles, 'zh', lang),
+              translateBatch(shops, 'zh', lang)
+            ]);
+            newProducts = newProducts.map((p: any, i: number) => ({
+              ...p,
+              title: translatedTitles[i] || p.title,
+              shop: translatedShops[i] || p.shop
+            }));
+          } catch (err) {
+            console.warn('Translation failed, using original:', err);
+          }
+        }
+        setProducts(newProducts);
       }
     } catch (error) {
       console.error('Search failed:', error);
