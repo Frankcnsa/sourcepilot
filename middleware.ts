@@ -23,6 +23,7 @@ const publicApiPrefixes = [
   '/api/hot-products',
   '/api/categories',
   '/api/guess-you-like',
+  '/api/debug-network',
 ];
 
 export async function middleware(request: NextRequest) {
