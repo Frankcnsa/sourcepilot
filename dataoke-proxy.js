@@ -12,26 +12,18 @@ const APP_SECRET = process.env.DATAOKE_APP_SECRET || '1e13c6ff3546d62dcb1974512f
 const BASE_URL = 'https://openapi.dataoke.com';
 const PORT = process.env.PORT || 3001;
 
-// 生成大淘客签名
+// 生成大淘客签名（新版本）
 function generateSign(params, appSecret) {
-  const filteredParams = {};
-  for (const [key, value] of Object.entries(params)) {
-    if (key !== 'sign' && value !== undefined && value !== null && value !== '') {
-      filteredParams[key] = String(value);
-    }
-  }
+  const nonce = Math.random().toString().substr(2, 6);
+  const timer = Date.now().toString();
   
-  const sortedKeys = Object.keys(filteredParams).sort();
-  let signStr = appSecret;
-  for (const key of sortedKeys) {
-    signStr += key + filteredParams[key];
-  }
-  signStr += appSecret;
+  const signStr = `appKey=${params.appKey}&timer=${timer}&nonce=${nonce}&key=${appSecret}`;
+  const signRan = crypto.createHash('md5').update(signStr).digest('hex').toUpperCase();
   
-  return crypto.createHash('md5').update(signStr).digest('hex');
+  return { signRan, nonce, timer };
 }
 
-// 调用大淘客API
+// 调用大淘客API（新验签方式）
 async function callDataokeAPI(endpoint, params, version = 'v1.0.0') {
   const allParams = {
     appKey: APP_KEY,
@@ -39,9 +31,12 @@ async function callDataokeAPI(endpoint, params, version = 'v1.0.0') {
     ...params
   };
   
-  allParams.sign = generateSign(allParams, APP_SECRET);
+  // 生成新签名
+  const { signRan, nonce, timer } = generateSign(allParams, APP_SECRET);
   
-  const queryStr = new URLSearchParams(allParams).toString();
+  // 拼接URL参数
+  const queryParams = { ...allParams, signRan, nonce, timer };
+  const queryStr = new URLSearchParams(queryParams).toString();
   const url = `${BASE_URL}${endpoint}?${queryStr}`;
   
   try {
@@ -67,13 +62,14 @@ app.use((req, res, next) => {
 // 1. 搜索 (id=9)
 app.post('/api/search/taobao', async (req, res) => {
   try {
-    const { query, page = 1, pageSize = 20, sort, hasCoupon } = req.body;
+    const { query, page = 1, pageSize = 20, sort, hasCoupon, type = '0' } = req.body;
     const result = await callDataokeAPI('/api/goods/list-super-goods', {
       pageSize: String(pageSize),
       pageId: String(page),
       keyWords: query || '',
       sort: sort || 'total_sales_des',
-      hasCoupon: hasCoupon || '0'
+      hasCoupon: hasCoupon || '0',
+      type
     }, 'v1.0.0');
     
     res.json({
