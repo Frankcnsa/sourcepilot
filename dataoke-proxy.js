@@ -41,8 +41,16 @@ async function callDataokeAPI(endpoint, params, version = 'v1.0.0') {
   
   try {
     const response = await fetch(url, { method: 'GET' });
-    const data = await response.json();
-    return data;
+    const text = await response.text();
+    
+    // 尝试解析 JSON
+    try {
+      const data = JSON.parse(text);
+      return data;
+    } catch (jsonErr) {
+      console.error('JSON parse error:', jsonErr.message, 'Response:', text.substring(0, 200));
+      return { code: -1, msg: `Invalid JSON response: ${text.substring(0, 100)}` };
+    }
   } catch (err) {
     return { code: -1, msg: err.message };
   }
@@ -59,138 +67,131 @@ app.use((req, res, next) => {
   next();
 });
 
-// 1. 搜索 (id=9)
-app.post('/api/search/taobao', async (req, res) => {
+// 根路径处理 - 根据 action 路由
+app.post('/', async (req, res) => {
   try {
-    const { query, page = 1, pageSize = 20, sort, hasCoupon, type = '0' } = req.body;
-    const result = await callDataokeAPI('/api/goods/list-super-goods', {
-      pageSize: String(pageSize),
-      pageId: String(page),
-      keyWords: query || '',
-      sort: sort || 'total_sales_des',
-      hasCoupon: hasCoupon || '0',
-      type
-    }, 'v1.0.0');
+    const { action, ...params } = req.body;
+    
+    if (!action) {
+      return res.status(400).json({ success: false, error: 'Missing action field' });
+    }
+    
+    let result;
+    
+    switch (action) {
+      case 'guess-you-like': {
+        // 猜你喜欢 - 使用商品列表接口
+        const { size = 10, page = 1, type = '0' } = params;
+        result = await callDataokeAPI('/api/goods/get-goods-list', {
+          pageSize: String(size),
+          pageId: String(page),
+          sort: 'total_sales_des',
+          type
+        }, 'v1.2.3');
+        // 统一返回格式：把 result.data.list 提取出来
+        if (result.code === 0 && result.data && result.data.list) {
+          result = { code: 0, data: result.data.list, raw: result };
+        }
+        break;
+      }
+      
+      case 'hot-products': {
+        // 热销商品 - 使用商品列表接口，按销量排序
+        const { pageSize = 8, page = 1, type = '0' } = params;
+        result = await callDataokeAPI('/api/goods/list-super-goods', {
+          pageSize: String(pageSize),
+          pageId: String(page),
+          keyWords: '手机',
+          sort: 'total_sales_des',
+          type
+        }, 'v1.0.0');
+        break;
+      }
+      
+      case 'super-categories': {
+        // 超级分类
+        result = await callDataokeAPI('/api/category/get-super-category', {}, 'v1.1.0');
+        break;
+      }
+      
+      case 'search':
+      case 'search/taobao':
+      case 'search/dataoke': {
+        // 搜索商品
+        const { query, page = 1, pageSize = 20, sort, hasCoupon, type = '0' } = params;
+        result = await callDataokeAPI('/api/goods/list-super-goods', {
+          pageSize: String(pageSize),
+          pageId: String(page),
+          keyWords: query || '',
+          sort: sort || 'total_sales_des',
+          hasCoupon: hasCoupon || '0',
+          type
+        }, 'v1.0.0');
+        break;
+      }
+      
+      case 'convert-link': {
+        // 转链
+        const { goodsId, itemId, pid, couponId } = params;
+        result = await callDataokeAPI('/api/tb-service/get-privilege-link', {
+          goodsId: goodsId || itemId || '',
+          pid: pid || 'mm_123_456_789',
+          couponId: couponId || ''
+        }, 'v1.3.1');
+        break;
+      }
+      
+      case 'hot-words': {
+        // 热搜词
+        const { type = '1' } = params;
+        result = await callDataokeAPI('/api/category/get-top100', { type }, 'v1.0.1');
+        break;
+      }
+      
+      case 'rank-list': {
+        // 榜单
+        const { pageSize = 20, page = 1, rankType = '1' } = params;
+        result = await callDataokeAPI('/api/goods/get-rank-list', {
+          pageSize: String(pageSize),
+          pageId: String(page),
+          rankType
+        }, 'v1.2.2');
+        break;
+      }
+      
+      case 'nine-nine': {
+        // 9.9包邮
+        const { pageSize = 20, page = 1, nineCid = '1' } = params;
+        result = await callDataokeAPI('/api/goods/nine-nine-goods', {
+          pageSize: String(pageSize),
+          pageId: String(page),
+          nineCid
+        }, 'v1.2.0');
+        break;
+      }
+      
+      case 'goods-list': {
+        // 商品列表
+        const { pageSize = 20, page = 1, sort = '0', cids } = params;
+        result = await callDataokeAPI('/api/goods/get-goods-list', {
+          pageSize: String(pageSize),
+          pageId: String(page),
+          sort,
+          cids: cids || ''
+        }, 'v1.2.3');
+        break;
+      }
+      
+      default:
+        return res.status(400).json({ success: false, error: `Unknown action: ${action}` });
+    }
     
     res.json({
       success: result.code === 0,
       data: result.data || result,
       raw: result
     });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// 2. 转链 (id=7)
-app.post('/api/convert-link', async (req, res) => {
-  try {
-    const { goodsId, itemId, pid, couponId } = req.body;
-    const result = await callDataokeAPI('/api/tb-service/get-privilege-link', {
-      goodsId: goodsId || itemId || '',
-      pid: pid || 'mm_123_456_789',
-      couponId: couponId || ''
-    }, 'v1.3.1');
     
-    res.json({
-      success: result.code === 0,
-      data: result.data || result,
-      raw: result
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// 3. 热搜记录 (id=4)
-app.get('/api/hot-words', async (req, res) => {
-  try {
-    const { type = '1' } = req.query;
-    const result = await callDataokeAPI('/api/category/get-top100', {
-      type
-    }, 'v1.0.1');
-    
-    res.json({
-      success: result.code === 0,
-      data: result.data || result,
-      raw: result
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// 4. 超级分类 (id=10)
-app.get('/api/super-category', async (req, res) => {
-  try {
-    const result = await callDataokeAPI('/api/category/get-super-category', {}, 'v1.1.0');
-    
-    res.json({
-      success: result.code === 0,
-      data: result.data || result,
-      raw: result
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// 5. 各大榜单 (id=6)
-app.post('/api/rank-list', async (req, res) => {
-  try {
-    const { pageSize = 20, page = 1, rankType = '1' } = req.body;
-    const result = await callDataokeAPI('/api/goods/get-rank-list', {
-      pageSize: String(pageSize),
-      pageId: String(page),
-      rankType
-    }, 'v1.2.2');
-    
-    res.json({
-      success: result.code === 0,
-      data: result.data || result,
-      raw: result
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// 6. 9.9包邮 (id=15)
-app.post('/api/nine-nine', async (req, res) => {
-  try {
-    const { pageSize = 20, page = 1, nineCid = '1' } = req.body;
-    const result = await callDataokeAPI('/api/goods/nine-nine-goods', {
-      pageSize: String(pageSize),
-      pageId: String(page),
-      nineCid
-    }, 'v1.2.0');
-    
-    res.json({
-      success: result.code === 0,
-      data: result.data || result,
-      raw: result
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// 7. 商品列表 (id=5)
-app.post('/api/goods-list', async (req, res) => {
-  try {
-    const { pageSize = 20, page = 1, sort = '0', cids } = req.body;
-    const result = await callDataokeAPI('/api/goods/get-goods-list', {
-      pageSize: String(pageSize),
-      pageId: String(page),
-      sort,
-      cids: cids || ''
-    }, 'v1.2.3');
-    
-    res.json({
-      success: result.code === 0,
-      data: result.data || result,
-      raw: result
-    });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -207,13 +208,7 @@ app.use((req, res) => {
     success: false,
     error: 'Unknown endpoint',
     available: [
-      'POST /api/search/taobao',
-      'POST /api/convert-link',
-      'GET /api/hot-words',
-      'GET /api/super-category',
-      'POST /api/rank-list',
-      'POST /api/nine-nine',
-      'POST /api/goods-list',
+      'POST / (with action field)',
       'GET /health'
     ]
   });
@@ -222,4 +217,5 @@ app.use((req, res) => {
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`大淘客代理服务运行在 http://0.0.0.0:${PORT}`);
   console.log(`健康检查: http://111.230.10.101:${PORT}/health`);
+  console.log(`支持的动作 (action): guess-you-like, hot-products, super-categories, search, convert-link, hot-words, rank-list, nine-nine, goods-list`);
 });

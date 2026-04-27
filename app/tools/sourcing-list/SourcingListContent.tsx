@@ -239,7 +239,7 @@ export default function SourcingListPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           items: selectedProducts,
-          lang: currentLang
+          lang: lang
         })
       });
 
