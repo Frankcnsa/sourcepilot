@@ -118,10 +118,7 @@ export default function SearchSourcePage() {
     }
   };
 
-  // 使用全局语言，但保留 currentLang 兼容（如果其他地方用到）
-  const currentLang = lang;
-
-  const text = t[currentLang as keyof typeof t] || t.en;
+  const text = t[lang as keyof typeof t] || t.en;
 
   // 加载购物车数量
   useEffect(() => {
