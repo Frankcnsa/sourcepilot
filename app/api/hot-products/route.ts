@@ -4,7 +4,7 @@ import { translateBatch } from '@/lib/aliyun-translate';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-const DATAOKE_PROXY_URL = process.env.DATAOKE_PROXY_URL || 'http://127.0.0.1:3001';
+const DATAOKE_PROXY_URL = process.env.DATAOKE_PROXY_URL || 'http://111.230.10.101:3001';
 
 export async function GET(request: Request) {
   try {
