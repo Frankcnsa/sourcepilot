@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Search, ShoppingCart } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import ProductDetailModal from './ProductDetailModal';
 
 interface Product {
   id: string;
@@ -38,7 +37,6 @@ export default function SearchSourcePage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [currentLang, setCurrentLang] = useState('en');
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [cartCount, setCartCount] = useState(0);
 
   // 超级分类
@@ -378,7 +376,7 @@ export default function SearchSourcePage() {
                 <div 
                   key={product.id} 
                   className="bg-white rounded-xl overflow-hidden border border-gray-100 hover:shadow-md transition-shadow active:scale-[0.98] cursor-pointer"
-                  onClick={() => setSelectedProduct(product)}
+                  onClick={() => router.push(`/product/${product.id}`)}
                 >
                   {/* Image */}
                   <div className="aspect-[4/5] bg-gray-100 relative overflow-hidden">
@@ -461,15 +459,7 @@ export default function SearchSourcePage() {
         )}
       </div>
 
-      {/* Product Detail Modal */}
-      {selectedProduct && (
-        <ProductDetailModal
-          product={selectedProduct}
-          onClose={() => setSelectedProduct(null)}
-          onAddToCart={addToCart}
-          currentLang={currentLang}
-        />
-      )}
+
     </div>
   );
 }
