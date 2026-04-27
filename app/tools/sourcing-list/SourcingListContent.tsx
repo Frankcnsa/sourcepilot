@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { Trash2, FileText, CheckSquare, Square, Send, ExternalLink, ShoppingCart, Store, ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { translateBatch } from '@/lib/aliyun-translate';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface SourcingItem {
   id: string;
@@ -22,7 +24,7 @@ export default function SourcingListPage() {
   const [loading, setLoading] = useState(true);
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [generatingPdf, setGeneratingPdf] = useState(false);
-  const [currentLang, setCurrentLang] = useState('en');
+  const { lang } = useLanguage();
   const [buyingItem, setBuyingItem] = useState<string | null>(null);
 
   // 翻译文本
@@ -66,22 +68,103 @@ export default function SourcingListPage() {
       items: '件商品',
       deleteConfirm: '删除选中的商品？',
       manage: '管理'
+    },
+    ar: {
+      title: 'قائمة التسوق',
+      back: 'العودة',
+      empty: 'قائمتك فارغة',
+      startSourcing: 'ابدأ التسوق',
+      selectAll: 'تحديد الكل',
+      delete: 'حذف',
+      generatePdf: 'إنشاء تقرير',
+      price: 'السعر',
+      shop: 'المتجر',
+      added: 'أضيف',
+      sendTo: 'إرسال إلى',
+      pdfSent: 'تم إرسال PDF!',
+      selectItems: 'حدد العناصر أولاً',
+      buyOnTaobao: 'اذهب إلى تاوباو',
+      total: 'المجموع',
+      items: 'عنصر',
+      deleteConfirm: 'حذف العناصر المحددة؟',
+      manage: 'إدارة'
+    },
+    ru: {
+      title: 'Корзина закупок',
+      back: 'Назад',
+      empty: 'Ваша корзина пуста',
+      startSourcing: 'Начать закупку',
+      selectAll: 'Выбрать все',
+      delete: 'Удалить',
+      generatePdf: 'Создать отчёт',
+      price: 'Цена',
+      shop: 'Магазин',
+      added: 'Добавлено',
+      sendTo: 'Отправить в',
+      pdfSent: 'PDF отправлен!',
+      selectItems: 'Сначала выберите товары',
+      buyOnTaobao: 'Перейти на Taobao',
+      total: 'Всего',
+      items: 'товаров',
+      deleteConfirm: 'Удалить выбранные товары?',
+      manage: 'Управление'
+    },
+    es: {
+      title: 'Carrito de Sourcing',
+      back: 'Volver',
+      empty: 'Tu carrito está vacío',
+      startSourcing: 'Empezar Sourcing',
+      selectAll: 'Seleccionar todo',
+      delete: 'Eliminar',
+      generatePdf: 'Generar informe',
+      price: 'Precio',
+      shop: 'Tienda',
+      added: 'Añadido',
+      sendTo: 'Enviar a',
+      pdfSent: '¡PDF enviado!',
+      selectItems: 'Seleccione productos primero',
+      buyOnTaobao: 'Ir a Taobao',
+      total: 'Total',
+      items: 'productos',
+      deleteConfirm: '¿Eliminar productos seleccionados?',
+      manage: 'Gestionar'
     }
   };
 
-  const text = t[currentLang as keyof typeof t] || t.en;
+  const text = t[lang as keyof typeof t] || t.en;
 
   // 加载采购清单
   useEffect(() => {
     fetchItems();
-  }, []);
+  }, [lang]);
 
   const fetchItems = async () => {
     try {
       const response = await fetch('/api/sourcing-items');
       if (response.ok) {
         const data = await response.json();
-        setItems(data.items || []);
+        let items = data.items || [];
+        
+        // 用阿里翻译机翻译商品标题和店铺名
+        if (lang !== 'zh') {
+          try {
+            const titles = items.map((item: any) => item.title || '');
+            const shops = items.map((item: any) => item.shop_name || '');
+            const [translatedTitles, translatedShops] = await Promise.all([
+              translateBatch(titles, 'zh', lang),
+              translateBatch(shops, 'zh', lang)
+            ]);
+            items = items.map((item: any, i: number) => ({
+              ...item,
+              title: translatedTitles[i] || item.title,
+              shop_name: translatedShops[i] || item.shop_name
+            }));
+          } catch (err) {
+            console.warn('[Cart] Translation failed, using originals:', err);
+          }
+        }
+        
+        setItems(items);
       }
     } catch (error) {
       console.error('Failed to fetch items:', error);

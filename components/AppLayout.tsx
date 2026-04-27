@@ -5,37 +5,14 @@ import { Menu, ChevronDown } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
+import { LanguageProvider, useLanguage } from '@/context/LanguageContext';
 
-const supportedLanguages = [
-  { code: 'zh', name: '中文' },
-  { code: 'en', name: 'English' },
-  { code: 'ar', name: 'العربية' },
-  { code: 'ru', name: 'Русский' },
-  { code: 'es', name: 'Español' }
-];
-
-function detectLanguage(): string {
-  if (typeof window === 'undefined') return 'en';
-  const lang = navigator.language || navigator.languages[0] || 'en';
-  const primaryLang = lang.split('-')[0];
-  return supportedLanguages.find(l => l.code === primaryLang)?.code || 'en';
-}
-
-interface AppLayoutProps {
-  children: React.ReactNode;
-  currentTool?: string;
-}
-
-export default function AppLayout({ children, currentTool }: AppLayoutProps) {
+// 内部组件，使用 useLanguage
+function AppLayoutInner({ children, currentTool }: { children: React.ReactNode; currentTool?: string }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [lang, setLang] = useState('en');
   const [showLangDropdown, setShowLangDropdown] = useState(false);
-
-  useEffect(() => {
-    setLang(detectLanguage());
-  }, []);
-
+  const { lang, setLang, supportedLanguages } = useLanguage();
   const currentLangName = supportedLanguages.find(l => l.code === lang)?.name || 'English';
 
   useEffect(() => {
@@ -133,5 +110,14 @@ export default function AppLayout({ children, currentTool }: AppLayoutProps) {
         </div>
       </div>
     </div>
+  );
+}
+
+// 外层包裹 LanguageProvider
+export default function AppLayout({ children, currentTool }: { children: React.ReactNode; currentTool?: string }) {
+  return (
+    <LanguageProvider>
+      <AppLayoutInner currentTool={currentTool}>{children}</AppLayoutInner>
+    </LanguageProvider>
   );
 }
