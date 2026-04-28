@@ -369,8 +369,7 @@ export default function SearchSourcePage() {
 
       <div className="max-w-4xl mx-auto px-3">
         {/* Horizontal Category Navigation */}
-        {!products.length && (
-          <div className="py-3 border-b">
+        <div className="py-3 border-b">
             {catLoading ? (
               <div className="flex gap-4 animate-pulse overflow-x-auto">
                 {[1,2,3,4,5,6].map(i => (
@@ -398,7 +397,7 @@ export default function SearchSourcePage() {
               </div>
             )}
           </div>
-        )}
+
 
         {/* Section Header - Guess You Like */}
         {!products.length && (
