@@ -230,7 +230,7 @@ export default function SearchSourceContent() {
   const renderProductCard = (product: Product) => (
     <div key={product.goodsId || product.id} className="bg-white rounded-xl overflow-hidden border border-gray-100 shadow-sm">
       <div className="aspect-square relative">
-        <img src={product.pic} alt={product.dtitle} className="w-full h-full object-cover" />
+        <img src={product.pic?.replace('http://', 'https://')} alt={product.dtitle} className="w-full h-full object-cover" />
         {product.couponInfo && (
           <div className="absolute top-1 left-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded">
             {product.couponInfo}
