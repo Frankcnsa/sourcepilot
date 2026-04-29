@@ -12,6 +12,10 @@ export async function middleware(request: NextRequest) {
     });
   }
 
+  let supabaseResponse = NextResponse.next({
+    request,
+  });
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -48,7 +52,6 @@ export async function middleware(request: NextRequest) {
   return supabaseResponse;
 }
 
-// 匹配所有非静态路径
 export const config = {
   matcher: [
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*',
