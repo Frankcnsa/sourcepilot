@@ -83,11 +83,11 @@ export default function SearchSourceContent() {
             {products.map(p => (
               <div key={p.id} className="bg-white rounded-xl overflow-hidden border">
                 <div className="aspect-square relative">
-                  <img src={p.image} alt={p.title} className="w-full h-full object-cover" />
+                  <img src={p.pic || p.mainPic} alt={p.dtitle} className="w-full h-full object-cover" />
                 </div>
                 <div className="p-2.5">
-                  <h3 className="text-sm font-medium">{p.title}</h3>
-                  <div className="text-orange-600 font-bold">¥{p.price}</div>
+                  <h3 className="text-sm font-medium">{p.dtitle}</h3>
+                  <div className="text-orange-600 font-bold">¥{p.actualPrice || p.yuanjia || 'N/A'}</div>
                 </div>
               </div>
             ))}
