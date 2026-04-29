@@ -66,7 +66,9 @@ export default function SearchSourceContent() {
     })
       .then(r => r.json())
       .then(data => {
-        if (data.success && data.data?.categoryRespVOS) {
+        if (data.success && Array.isArray(data.data)) {
+          setCategories(data.data);
+        } else if (data.success && data.data?.categoryRespVOS) {
           setCategories(data.data.categoryRespVOS);
         }
       })
