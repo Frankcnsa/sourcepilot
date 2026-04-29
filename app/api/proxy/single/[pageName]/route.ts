@@ -12,8 +12,9 @@ const ALLOWED_PAGES = [
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { pageName: string } }
+  context: { params: Promise<{ pageName: string }> }
 ) {
+  const params = await context.params;
   const pageName = params.pageName;
 
   // 校验pageName

@@ -2,101 +2,77 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
-import { ArrowLeft, ShoppingCart, Heart, Share2 } from 'lucide-react';
-import { getSupabaseBrowserClient } from '@/lib/supabase';
+import { ArrowLeft, ShoppingCart, Share2, Heart } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface ProductDetail {
   id: string;
   title: string;
   price: number;
   originalPrice?: number;
-  image: string;
-  images?: string[];
+  images: string[];
   shop: string;
-  shopType?: number;
   sales: string;
-  couponInfo?: string;
-  couponLink?: string;
   brandName?: string;
   desc?: string;
-  monthSales?: number;
+  couponLink?: string;
   link: string;
 }
 
 export default function ProductDetailPage() {
   const router = useRouter();
   const { id } = useParams();
+  const { lang, setLang } = useLanguage();
   const [product, setProduct] = useState<ProductDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentLang, setCurrentLang] = useState('en');
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-
-  // 身份验证检查
-  useEffect(() => {
-    const checkAuth = async () => {
-      const supabase = getSupabaseBrowserClient();
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        // 未登录，跳转到登录页并带回跳地址
-        router.push(`/login?redirect=/product/${id}`);
-        return;
-      }
-      setIsAuthenticated(true);
-    };
-    checkAuth();
-  }, [id, router]);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   useEffect(() => {
-    // Detect language from browser
-    const lang = navigator.language?.split('-')[0] || 'en';
-    const supported = ['zh', 'en', 'ar', 'ru', 'es'];
-    setCurrentLang(supported.includes(lang) ? lang : 'en');
-    
-    if (isAuthenticated) {
+    if (id) {
       fetchProductDetail();
     }
-  }, [id, isAuthenticated]);
+  }, [id, lang]);
 
   const fetchProductDetail = async () => {
+    setLoading(true);
+    setError(null);
     try {
-      setLoading(true);
-      const res = await fetch('/api/product-detail', {
+      // 调用中转服务：用 search action 模拟详情（因为大淘客无直接详情接口）
+      const res = await fetch('/api/proxy', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          num_iid: id,
-          targetLang: currentLang
+          action: 'search',
+          query: id, // 用ID作为查询（临时方案）
+          pageSize: 1,
+          page: 1,
+          lang
         })
       });
       const data = await res.json();
-      
-      if (data.success) {
-        const p = data.product;
+      if (data.success && data.data && data.data.length > 0) {
+        const p = data.data[0];
         setProduct({
-          id: data.num_iid,
-          title: p.title || p.item_title || 'No Title',
-          price: p.price || p.item_price || 0,
-          originalPrice: p.originalPrice || p.zk_final_price || undefined,
-          image: p.pict_url || p.item_pict_url || '',
-          images: p.small_images?.string || [],
-          shop: p.seller_nick || p.shop_name || 'Unknown Shop',
-          shopType: p.user_type,
-          sales: p.volume || p.month_sales || '0',
-          couponInfo: p.coupon_info,
-          couponLink: p.coupon_click_url,
-          brandName: p.brand_name,
+          id: p.id || id,
+          title: p.title || 'Product Detail',
+          price: p.price || 0,
+          originalPrice: p.originalPrice,
+          images: p.images || [p.image || ''].filter(Boolean),
+          shop: p.shop || '',
+          sales: p.sales || '',
+          brandName: p.brandName,
           desc: p.desc,
-          monthSales: p.month_sales,
-          link: p.item_url || p.url || '#'
+          couponLink: p.couponLink,
+          link: p.link || ''
         });
       } else {
-        setError(data.error || 'Failed to load product');
+        setError('Product not found');
       }
     } catch (err) {
-      setError('Network error');
+      console.error('Failed to load product:', err);
+      setError('Failed to load product');
     } finally {
       setLoading(false);
     }
@@ -104,7 +80,6 @@ export default function ProductDetailPage() {
 
   const handleAddToCart = async () => {
     if (!product) return;
-    
     try {
       await fetch('/api/sourcing-items', {
         method: 'POST',
@@ -112,27 +87,19 @@ export default function ProductDetailPage() {
         body: JSON.stringify({
           product_id: product.id,
           title: product.title,
-          image_url: product.image,
+          image_url: product.images[0] || '',
           price: String(product.price),
           shop_name: product.shop,
           product_url: product.link
         })
       });
-      alert(currentLang === 'zh' ? '已加入清单' : 'Added to list');
+      alert(lang === 'zh' ? '已加入清单' : 'Added to list');
     } catch (err) {
       console.error('Add to cart failed:', err);
     }
   };
 
-  // 身份验证检查中
-  if (isAuthenticated === null) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
-      </div>
-    );
-  }
-
+  // Loading state
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -141,6 +108,7 @@ export default function ProductDetailPage() {
     );
   }
 
+  // Error state
   if (error || !product) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center gap-4">
@@ -149,41 +117,90 @@ export default function ProductDetailPage() {
           onClick={() => router.back()}
           className="px-4 py-2 bg-orange-500 text-white rounded-lg"
         >
-          {currentLang === 'zh' ? '返回' : 'Go Back'}
+          {lang === 'zh' ? '返回' : 'Go Back'}
         </button>
       </div>
     );
   }
 
+  // Language texts
+  const text = {
+    zh: {
+      productDetail: '商品详情',
+      originalPrice: '原价',
+      sales: '人付款',
+      addToCart: '加入清单',
+      brand: '品牌',
+      description: '商品详情'
+    },
+    en: {
+      productDetail: 'Product Details',
+      originalPrice: 'Original',
+      sales: 'sold',
+      addToCart: 'Add to List',
+      brand: 'Brand',
+      description: 'Description'
+    }
+  }[lang] || {
+    productDetail: 'Product Details',
+    originalPrice: 'Original',
+    sales: 'sold',
+    addToCart: 'Add to List',
+    brand: 'Brand',
+    description: 'Description'
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="sticky top-0 bg-white border-b z-10">
+      <header className="sticky top-0 bg-white border-b z-40">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-4">
           <button onClick={() => router.back()} className="p-2 hover:bg-gray-100 rounded-full">
             <ArrowLeft size={20} />
           </button>
-          <span className="font-medium text-gray-800">
-            {currentLang === 'zh' ? '商品详情' : 'Product Details'}
-          </span>
+          <span className="font-medium text-gray-800">{text.productDetail}</span>
+          <div className="flex-1"></div>
+          <select
+            value={lang}
+            onChange={(e) => setLang(e.target.value as any)}
+            className="text-sm border rounded-lg px-2 py-1"
+          >
+            <option value="zh">中文</option>
+            <option value="en">English</option>
+            <option value="ru">Русский</option>
+            <option value="es">Español</option>
+            <option value="ar">العربية</option>
+          </select>
+          <button className="p-2 hover:bg-gray-100 rounded-full">
+            <Share2 size={20} className="text-gray-600" />
+          </button>
+          <button className="p-2 hover:bg-gray-100 rounded-full">
+            <Heart size={20} className="text-gray-600" />
+          </button>
         </div>
       </header>
 
       <div className="max-w-6xl mx-auto px-4 py-6">
         <div className="grid md:grid-cols-2 gap-8">
-          {/* Left: Images */}
+          {/* Left: Image Carousel */}
           <div className="space-y-4">
             <div className="aspect-square bg-white rounded-2xl overflow-hidden border">
-              <img 
-                src={product.image} 
-                alt={product.title}
-                className="w-full h-full object-contain"
-              />
+              {product.images.length > 0 && (
+                <img 
+                  src={product.images[currentImageIndex]} 
+                  alt={product.title}
+                  className="w-full h-full object-cover"
+                />
+              )}
             </div>
-            {product.images && product.images.length > 0 && (
+            {product.images.length > 1 && (
               <div className="grid grid-cols-5 gap-2">
                 {product.images.map((img, idx) => (
-                  <div key={idx} className="aspect-square bg-white rounded-lg overflow-hidden border">
+                  <div 
+                    key={idx}
+                    className={`aspect-square rounded-lg overflow-hidden border-2 cursor-pointer ${currentImageIndex === idx ? 'border-orange-500' : 'border-transparent'}`}
+                    onClick={() => setCurrentImageIndex(idx)}
+                  >
                     <img src={img} alt="" className="w-full h-full object-cover" />
                   </div>
                 ))}
@@ -191,14 +208,12 @@ export default function ProductDetailPage() {
             )}
           </div>
 
-          {/* Right: Info */}
+          {/* Right: Product Info */}
           <div className="space-y-6">
-            <div>
-              <h1 className="text-xl font-bold text-gray-800 leading-tight">
-                {product.brandName && <span className="text-red-500 mr-2">{product.brandName}</span>}
-                {product.title}
-              </h1>
-            </div>
+            <h1 className="text-xl font-bold text-gray-800 leading-tight">
+              {product.brandName && <span className="text-red-500 mr-2">{product.brandName}</span>}
+              {product.title}
+            </h1>
 
             {/* Price Card */}
             <div className="bg-gradient-to-r from-red-50 to-orange-50 p-4 rounded-xl">
@@ -206,73 +221,82 @@ export default function ProductDetailPage() {
                 <span className="text-3xl font-bold text-red-500">¥{product.price}</span>
                 {product.originalPrice && product.originalPrice > product.price && (
                   <>
-                    <span className="text-sm text-gray-400 line-through mb-1">¥{product.originalPrice}</span>
+                    <span className="text-sm text-gray-400 line-through">¥{product.originalPrice}</span>
                     <span className="bg-red-500 text-white text-xs px-2 py-1 rounded">
-                      {currentLang === 'zh' ? '省' : 'Save'} ¥{(product.originalPrice - product.price).toFixed(2)}
+                      {text.originalPrice} ¥{(product.originalPrice - product.price).toFixed(2)}
                     </span>
                   </>
                 )}
               </div>
               <div className="mt-2 text-sm text-gray-500">
-                {product.monthSales || product.sales} {currentLang === 'zh' ? '人付款' : 'sold'}
+                {product.sales} {text.sales}
               </div>
             </div>
-
-            {/* Coupon */}
-            {product.couponInfo && (
-              <div className="bg-red-50 border border-red-100 p-3 rounded-lg flex items-center justify-between">
-                <span className="text-red-600 font-medium">{product.couponInfo}</span>
-                <a 
-                  href={product.couponLink || product.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-red-500 text-white text-sm px-4 py-1.5 rounded-full hover:bg-red-600"
-                >
-                  {currentLang === 'zh' ? '领券' : 'Get Coupon'}
-                </a>
-              </div>
-            )}
 
             {/* Shop Info */}
             <div className="flex items-center gap-4 p-4 bg-white rounded-xl border">
               <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
-                <span className="text-gray-400">🏪</span>
+                🏪
               </div>
               <div>
                 <p className="font-medium text-gray-800">{product.shop}</p>
-                {product.shopType === 1 && (
-                  <span className="text-xs bg-red-50 text-red-500 px-2 py-0.5 rounded">天猫</span>
+                {product.brandName && (
+                  <p className="text-xs text-gray-500">{text.brand}: {product.brandName}</p>
                 )}
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex gap-4">
-              <button
-                onClick={handleAddToCart}
-                className="flex-1 flex items-center justify-center gap-2 py-3 bg-orange-500 text-white rounded-xl font-medium hover:bg-orange-600"
+            {/* Coupon Link */}
+            {product.couponLink && (
+              <a 
+                href={product.couponLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full py-3 bg-red-500 text-white text-center rounded-xl font-medium hover:bg-red-600 transition-colors"
               >
-                <ShoppingCart size={18} />
-                {currentLang === 'zh' ? '加入清单' : 'Add to List'}
-              </button>
-              <button className="p-3 border border-gray-200 rounded-xl hover:bg-gray-50">
-                <Heart size={20} className="text-gray-600" />
-              </button>
-              <button className="p-3 border border-gray-200 rounded-xl hover:bg-gray-50">
-                <Share2 size={20} className="text-gray-600" />
-              </button>
-            </div>
-
-            {/* Description */}
-            {product.desc && (
-              <div className="p-4 bg-white rounded-xl border">
-                <h3 className="font-medium text-gray-800 mb-2">
-                  {currentLang === 'zh' ? '商品详情' : 'Description'}
-                </h3>
-                <p className="text-sm text-gray-600 leading-relaxed">{product.desc}</p>
-              </div>
+                {lang === 'zh' ? '领券购买' : 'Get Coupon'}
+              </a>
             )}
           </div>
+        </div>
+
+        {/* Description - Long Image */}
+        {product.desc && (
+          <div className="mt-8 bg-white rounded-xl border p-4">
+            <h3 className="font-medium text-gray-800 mb-4">{text.description}</h3>
+            <div className="prose max-w-none text-sm text-gray-600 leading-relaxed">
+              {product.desc}
+            </div>
+          </div>
+        )}
+
+        {/* Recommended Products - placeholder */}
+        <div className="mt-8">
+          <h3 className="font-bold text-gray-800 mb-4">{lang === 'zh' ? '猜你喜欢' : 'You May Also Like'}</h3>
+          <div className="grid grid-cols-2 gap-2.5">
+            {[1,2,3,4].map(i => (
+              <div key={i} className="bg-white rounded-xl overflow-hidden border border-gray-100 animate-pulse">
+                <div className="aspect-square bg-gray-200"></div>
+                <div className="p-2.5 space-y-1.5">
+                  <div className="h-3 bg-gray-200 rounded"></div>
+                  <div className="h-3 w-16 bg-gray-200 rounded"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom Fixed Bar - Add to Cart */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg z-50">
+        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-4">
+          <button
+            onClick={handleAddToCart}
+            className="flex-1 py-3 bg-orange-500 text-white rounded-xl font-medium text-lg hover:bg-orange-600 transition-colors flex items-center justify-center gap-2"
+          >
+            <ShoppingCart size={20} />
+            {text.addToCart}
+          </button>
         </div>
       </div>
     </div>
