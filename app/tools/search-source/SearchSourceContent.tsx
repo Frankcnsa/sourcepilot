@@ -298,7 +298,9 @@ export default function SearchSourceContent() {
       });
       const data = await res.json();
       if (data.success && data.data) {
-        setProducts(Array.isArray(data.data) ? data.data : (data.data.list || []));
+        // search 返回 { list: [...] }
+        const products = Array.isArray(data.data) ? data.data : (data.data.list || data.data.data || []);
+        setProducts(products);
       }
     } catch (e) {
       console.error('Search failed:', e);
