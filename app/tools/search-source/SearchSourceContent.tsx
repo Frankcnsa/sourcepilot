@@ -17,6 +17,9 @@ interface Product {
   marketPrice?: number;
   couponInfo?: string;
   link?: string;
+  sellerId?: string;
+  salesNum?: number;
+  renqi?: number;
 }
 
 export default function SearchSourceContent() {
