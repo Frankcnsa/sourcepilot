@@ -61,6 +61,11 @@ export async function middleware(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
 
+  // 强制放行：单页路由和代理API（无需登录）
+  if (pathname.startsWith('/search/single') || pathname.startsWith('/api/proxy')) {
+    return supabaseResponse;
+  }
+
   // 检查是否为公开页面
   const isPublicPath = publicPaths.some(path => pathname === path || pathname.startsWith(path + '/'));
   
