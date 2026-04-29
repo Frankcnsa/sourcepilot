@@ -7,12 +7,16 @@ import { useLanguage } from '@/context/LanguageContext';
 
 interface Product {
   id: string;
+  goodsId: string;
   dtitle: string;
   actualPrice: number;
   pic: string;
   shop: string;
   sales: string;
-  goodsId: string;
+  yuanjia?: number;
+  marketPrice?: number;
+  couponInfo?: string;
+  link?: string;
 }
 
 export default function SearchSourceContent() {
