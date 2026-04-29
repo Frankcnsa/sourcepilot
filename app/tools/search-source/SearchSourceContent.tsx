@@ -216,7 +216,11 @@ export default function SearchSourceContent() {
     })
       .then(r => r.json())
       .then(data => {
-        if (data.success && data.data) setRealTime(data.data);
+        if (data.success && data.data) {
+          // real-time 返回 { data: { data: [...] } }
+          const products = Array.isArray(data.data) ? data.data : (data.data.data || data.data.list || []);
+          setRealTime(products);
+        }
         setRealTimeLoading(false);
       })
       .catch(() => setRealTimeLoading(false));
@@ -229,7 +233,10 @@ export default function SearchSourceContent() {
     })
       .then(r => r.json())
       .then(data => {
-        if (data.success && data.data) setNineNine(data.data);
+        if (data.success && data.data) {
+          const products = Array.isArray(data.data) ? data.data : (data.data.list || data.data.data || []);
+          setNineNine(products);
+        }
         setNineNineLoading(false);
       })
       .catch(() => setNineNineLoading(false));
@@ -242,7 +249,10 @@ export default function SearchSourceContent() {
     })
       .then(r => r.json())
       .then(data => {
-        if (data.success && data.data) setHighCommission(Array.isArray(data.data) ? data.data : (data.data.list || []));
+        if (data.success && data.data) {
+          const products = Array.isArray(data.data) ? data.data : (data.data.list || data.data.data || []);
+          setHighCommission(products);
+        }
         setHighCommissionLoading(false);
       })
       .catch(() => setHighCommissionLoading(false));
