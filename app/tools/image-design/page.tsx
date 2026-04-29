@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Wand2, Download, Sparkles, AlertCircle, Loader2, Menu, X, ChevronDown } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { getSupabaseBrowserClient } from '@/lib/supabase';
 import Sidebar from '@/components/Sidebar';
 
 // ... (保持原有的 avatarAttributes 和 promptMapping 不变)
@@ -122,7 +122,8 @@ export default function ImageDesignPage() {
     window.addEventListener('resize', handleResize);
     
     // Get session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const supabase = getSupabaseBrowserClient();
+    supabase.auth.getSession().then(({ data: { session } }: any) => {
       setSession(session);
       if (session) {
         checkFreeUsage(session.access_token);
@@ -130,7 +131,7 @@ export default function ImageDesignPage() {
       }
     });
     
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
       setSession(session);
     });
     

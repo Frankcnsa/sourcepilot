@@ -31,8 +31,28 @@ export async function GET(request: Request) {
 
     // Translate category names if not Chinese
     if (targetLang !== 'zh' && categories.length > 0) {
+      // Translate top-level category names
       const names = categories.map((c: any) => c.cname);
       const translated = await translateBatch(names, 'zh', targetLang);
+      // Translate subcategory names
+      const allSubNames: string[] = [];
+      const subIndices: { catIdx: number; subIdx: number }[] = [];
+      categories.forEach((cat: any, catIdx: number) => {
+        if (cat.subcategories) {
+          cat.subcategories.forEach((sub: any, subIdx: number) => {
+            allSubNames.push(sub.subcname);
+            subIndices.push({ catIdx, subIdx });
+          });
+        }
+      });
+      if (allSubNames.length > 0) {
+        const translatedSubs = await translateBatch(allSubNames, 'zh', targetLang);
+        translatedSubs.forEach((translatedSub: string, i: number) => {
+          const { catIdx, subIdx } = subIndices[i];
+          categories[catIdx].subcategories[subIdx].subcname = translatedSub || categories[catIdx].subcategories[subIdx].subcname;
+        });
+      }
+      // Apply top-level translations
       categories = categories.map((c: any, i: number) => ({
         ...c,
         cname: translated[i] || c.cname

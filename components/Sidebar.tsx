@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { getSupabaseBrowserClient } from '@/lib/supabase';
 import Link from 'next/link';
 import { 
   X, 
@@ -36,6 +36,7 @@ export default function Sidebar({ isOpen, onClose, isMobile = false, onNewChat, 
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const supabase = getSupabaseBrowserClient();
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
@@ -43,7 +44,7 @@ export default function Sidebar({ isOpen, onClose, isMobile = false, onNewChat, 
     };
     getUser();
 
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event: any, session: any) => {
       const currentUser = session?.user ?? null;
       setUser(currentUser);
     });
@@ -54,6 +55,7 @@ export default function Sidebar({ isOpen, onClose, isMobile = false, onNewChat, 
   }, []);
 
   const handleLogout = async () => {
+    const supabase = getSupabaseBrowserClient();
     await supabase.auth.signOut();
     window.location.href = '/';
   };

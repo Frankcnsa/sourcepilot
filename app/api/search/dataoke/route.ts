@@ -14,8 +14,56 @@ function detectLanguage(text: string): string {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { query, page = 1, pageSize = 20, targetLang = 'en' } = body;
+    const { query, page = 1, pageSize = 20, targetLang = 'en', action } = body;
 
+    // 如果有 action 字段（非 search），直接转发到代理根路径，并转换为标准产品格式
+    if (action && action !== 'search' && action !== 'search/dataoke') {
+      const proxyResponse = await fetch(`${DATAOKE_PROXY_URL}/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const proxyData = await proxyResponse.json();
+      
+      // 提取原始产品列表
+      let rawProducts: any[] = [];
+      if (proxyData.code === 0) {
+        const d = proxyData.data || proxyData;
+        if (d.list) rawProducts = d.list;
+        else if (d.items) rawProducts = d.items;
+        else if (Array.isArray(d)) rawProducts = d;
+        else if (d.data && Array.isArray(d.data)) rawProducts = d.data;
+      }
+      
+      // 映射为标准产品格式
+      const products = rawProducts.map((item: any) => ({
+        id: String(item.id || item.goodsId || Math.random().toString(36)),
+        title: item.title || item.goodsName || item.dtitle || 'Unknown Product',
+        originalTitle: item.dtitle || item.title || item.goodsName,
+        price: parseFloat(item.actualPrice || item.zkFinalPrice || item.price || 0),
+        originalPrice: item.originalPrice ? parseFloat(item.originalPrice) : (item.originPrice ? parseFloat(item.originPrice) : undefined),
+        image: item.mainPic || item.pic || item.pictUrl || item.image || '',
+        shop: item.shopTitle || item.nick || item.shop || 'Taobao Shop',
+        sales: item.monthSales || item.volume || item.sales || '0',
+        monthSales: item.monthSales || item.volume || 0,
+        link: item.couponLink || item.itemLink || item.url || item.link || '',
+        coupon: item.couponInfo || item.couponAmount || item.coupon || '',
+        couponInfo: item.couponInfo || item.couponAmount || '',
+        shopType: item.shopType || 0,
+        desc: item.desc || '',
+        brandName: item.brandName || '',
+        couponLink: item.couponLink || ''
+      }));
+      
+      return NextResponse.json({
+        success: proxyData.code === 0,
+        products,
+        total: proxyData.data?.totalNum || proxyData.total || products.length,
+        hasMore: products.length >= (body.pageSize || 20)
+      });
+    }
+
+    // 原来的 search 逻辑
     if (!query || typeof query !== 'string') {
       return NextResponse.json({ error: 'Query is required' }, { status: 400 });
     }

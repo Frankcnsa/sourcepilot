@@ -38,7 +38,6 @@ export default function SearchSourcePage() {
   const [query, setQuery] = useState('');
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
-  const [currentLang, setCurrentLang] = useState('en');
   const [cartCount, setCartCount] = useState(0);
 
   // 超级分类
@@ -52,6 +51,17 @@ export default function SearchSourcePage() {
   const [guessPage, setGuessPage] = useState(1);
   const [hasMoreGuess, setHasMoreGuess] = useState(true);
   const [loadingMoreGuess, setLoadingMoreGuess] = useState(false);
+
+  // 4大栏目状态
+  const [hotSales, setHotSales] = useState<Product[]>([]);
+  const [hotSalesLoading, setHotSalesLoading] = useState(true);
+  const [highCommission, setHighCommission] = useState<Product[]>([]);
+  const [highCommissionLoading, setHighCommissionLoading] = useState(true);
+  const [nineNine, setNineNine] = useState<Product[]>([]);
+  const [nineNineLoading, setNineNineLoading] = useState(true);
+  const [dailyHot, setDailyHot] = useState<Product[]>([]);
+  const [dailyHotLoading, setDailyHotLoading] = useState(true);
+
   const { lang } = useLanguage();
 
   // 翻译文本
@@ -59,6 +69,12 @@ export default function SearchSourcePage() {
     en: {
       searchPlaceholder: 'Search products...',
       guessYouLike: 'Guess You Like',
+      hotSales: 'Hot Sales',
+      highCommission: 'High Commission',
+      nineNine: '9.9 Shipping',
+      dailyHot: 'Daily Hot',
+      viewMore: 'View More',
+      noData: 'No data',
       search: 'Search',
       sales: 'sold',
       addToCart: 'Add to List',
@@ -71,6 +87,12 @@ export default function SearchSourcePage() {
     zh: {
       searchPlaceholder: '搜索宝贝...',
       guessYouLike: '猜你喜欢',
+      hotSales: '实时热销榜',
+      highCommission: '高佣精选',
+      nineNine: '9.9包邮',
+      dailyHot: '每日爆品',
+      viewMore: '查看更多',
+      noData: '暂无数据',
       search: '搜索',
       sales: '人付款',
       addToCart: '加入清单',
@@ -83,6 +105,12 @@ export default function SearchSourcePage() {
     ar: {
       searchPlaceholder: 'بحث...',
       guessYouLike: 'قد يعجبك',
+      hotSales: 'الأكثر مبيعاً',
+      highCommission: 'عمولة عالية',
+      nineNine: 'شحن 9.9',
+      dailyHot: 'الأكثر شعبية',
+      viewMore: 'عرض المزيد',
+      noData: 'لا توجد بيانات',
       search: 'بحث',
       sales: 'مباع',
       addToCart: 'أضف إلى القائمة',
@@ -95,6 +123,12 @@ export default function SearchSourcePage() {
     ru: {
       searchPlaceholder: 'Поиск...',
       guessYouLike: 'Вам может понравиться',
+      hotSales: 'Горячие продажи',
+      highCommission: 'Высокая комиссия',
+      nineNine: 'Доставка 9.9',
+      dailyHot: 'Ежедневный хит',
+      viewMore: 'Посмотреть ещё',
+      noData: 'Нет данных',
       search: 'Поиск',
       sales: 'продано',
       addToCart: 'Добавить в список',
@@ -107,6 +141,12 @@ export default function SearchSourcePage() {
     es: {
       searchPlaceholder: 'Buscar...',
       guessYouLike: 'Quizás te guste',
+      hotSales: 'Más Vendidos',
+      highCommission: 'Alta Comisión',
+      nineNine: 'Envío 9.9',
+      dailyHot: 'Popular Hoy',
+      viewMore: 'Ver más',
+      noData: 'Sin datos',
       search: 'Buscar',
       sales: 'vendidos',
       addToCart: 'Añadir a la lista',
@@ -156,44 +196,130 @@ export default function SearchSourcePage() {
     }
   };
 
-  // 加载猜你喜欢
+  // 翻译产品列表
+  const translateProducts = async (products: Product[], targetLang: string): Promise<Product[]> => {
+    if (targetLang === 'zh') return products;
+    
+    try {
+      const titles = products.map(p => p.title || '');
+      const shops = products.map(p => p.shop || '');
+      const [translatedTitles, translatedShops] = await Promise.all([
+        translateBatch(titles, 'zh', targetLang),
+        translateBatch(shops, 'zh', targetLang)
+      ]);
+      
+      return products.map((p, i) => ({
+        ...p,
+        title: translatedTitles[i] || p.title,
+        shop: translatedShops[i] || p.shop
+      }));
+    } catch (err) {
+      console.warn('Translation failed, using original:', err);
+      return products;
+    }
+  };
+
+  // 实时热销榜
+  const fetchHotSales = async () => {
+    setHotSalesLoading(true);
+    try {
+      const res = await fetch(`/api/hot-sales?page=1&pageSize=20&lang=${lang}`);
+      const data = await res.json();
+      if (data.success && data.products) {
+        setHotSales(data.products);
+      }
+    } catch (e) {
+      console.error('Failed to load hot sales:', e);
+    } finally {
+      setHotSalesLoading(false);
+    }
+  };
+
+  // 高佣精选
+  const fetchHighCommission = async () => {
+    setHighCommissionLoading(true);
+    try {
+      const res = await fetch(`/api/high-commission?page=1&pageSize=20&lang=${lang}`);
+      const data = await res.json();
+      if (data.success && data.products) {
+        setHighCommission(data.products);
+      }
+    } catch (e) {
+      console.error('Failed to load high commission:', e);
+    } finally {
+      setHighCommissionLoading(false);
+    }
+  };
+
+  // 9.9包邮
+  const fetchNineNine = async () => {
+    setNineNineLoading(true);
+    try {
+      const res = await fetch(`/api/nine-nine?page=1&pageSize=20&lang=${lang}`);
+      const data = await res.json();
+      if (data.success && data.products) {
+        setNineNine(data.products);
+      }
+    } catch (e) {
+      console.error('Failed to load 9.9 shipping:', e);
+    } finally {
+      setNineNineLoading(false);
+    }
+  };
+
+  // 每日爆品
+  const fetchDailyHot = async () => {
+    setDailyHotLoading(true);
+    try {
+      const res = await fetch(`/api/daily-hot?page=1&pageSize=20&lang=${lang}`);
+      const data = await res.json();
+      if (data.success && data.products) {
+        setDailyHot(data.products);
+      }
+    } catch (e) {
+      console.error('Failed to load daily hot:', e);
+    } finally {
+      setDailyHotLoading(false);
+    }
+  };
+
+  // 加载猜你喜欢 - 修复分页问题
   useEffect(() => {
-    fetchGuessYouLike();
+    setGuessProducts([]); // 切换语言时清空旧数据
+    setGuessPage(1);
+    setHasMoreGuess(true);
+    fetchGuessYouLike(1);
   }, [lang]);
 
   const fetchGuessYouLike = async (pageNum = 1) => {
-    if (pageNum === 1) setGuessLoading(true);
-    else setLoadingMoreGuess(true);
+    if (pageNum === 1) {
+      setGuessLoading(true);
+    } else {
+      setLoadingMoreGuess(true);
+    }
     
     try {
-      const res = await fetch(`/api/guess-you-like?lang=${lang}&page=${pageNum}&limit=10`);
+      const res = await fetch(`/api/guess-you-like?lang=${lang}&page=${pageNum}&limit=20`);
       const data = await res.json();
       if (data.success) {
         let newProducts = data.products || [];
         // 用阿里翻译机翻译商品标题和店铺名
         if (lang !== 'zh') {
-          try {
-            const titles = newProducts.map((p: any) => p.title || '');
-            const shops = newProducts.map((p: any) => p.shop || '');
-            const [translatedTitles, translatedShops] = await Promise.all([
-              translateBatch(titles, 'zh', lang),
-              translateBatch(shops, 'zh', lang)
-            ]);
-            newProducts = newProducts.map((p: any, i: number) => ({
-              ...p,
-              title: translatedTitles[i] || p.title,
-              shop: translatedShops[i] || p.shop
-            }));
-          } catch (err) {
-            console.warn('Translation failed, using original:', err);
-          }
+          newProducts = await translateProducts(newProducts, lang);
         }
         if (pageNum === 1) {
+          // 第一页：直接设置（已清空）
           setGuessProducts(newProducts);
         } else {
-          setGuessProducts(prev => [...prev, ...newProducts]);
+          // 追加模式：去重后追加
+          setGuessProducts(prev => {
+            const uniqueNew = newProducts.filter((p: Product) => !prev.some((existing: Product) => existing.id === p.id));
+            console.log(`[GuessYouLike] Page ${pageNum}: ${newProducts.length} new, ${uniqueNew.length} unique after dedup`);
+            return [...prev, ...uniqueNew];
+          });
         }
-        setHasMoreGuess(newProducts.length === 10);
+        // 如果返回少于20条，说明没有更多数据了
+        setHasMoreGuess(newProducts.length === 20);
         setGuessPage(pageNum);
       }
     } catch (e) {
@@ -203,6 +329,14 @@ export default function SearchSourcePage() {
       setLoadingMoreGuess(false);
     }
   };
+
+  // 加载4大栏目
+  useEffect(() => {
+    fetchHotSales();
+    fetchHighCommission();
+    fetchNineNine();
+    fetchDailyHot();
+  }, [lang]);
 
   // 搜索商品
   const handleSearch = async (searchQuery?: string) => {
@@ -229,21 +363,7 @@ export default function SearchSourcePage() {
         let newProducts = data.products || [];
         // 用阿里翻译机翻译商品标题和店铺名
         if (lang !== 'zh') {
-          try {
-            const titles = newProducts.map((p: any) => p.title || '');
-            const shops = newProducts.map((p: any) => p.shop || '');
-            const [translatedTitles, translatedShops] = await Promise.all([
-              translateBatch(titles, 'zh', lang),
-              translateBatch(shops, 'zh', lang)
-            ]);
-            newProducts = newProducts.map((p: any, i: number) => ({
-              ...p,
-              title: translatedTitles[i] || p.title,
-              shop: translatedShops[i] || p.shop
-            }));
-          } catch (err) {
-            console.warn('Translation failed, using original:', err);
-          }
+          newProducts = await translateProducts(newProducts, lang);
         }
         setProducts(newProducts);
       }
@@ -303,9 +423,118 @@ export default function SearchSourcePage() {
     return num.toString();
   };
 
+  // 渲染商品网格
+  const renderProductGrid = (products: Product[]) => (
+    <div className="grid grid-cols-2 gap-2.5">
+      {products.map(product => {
+        const savings = getSavings(product);
+        return (
+          <div 
+            key={product.id} 
+            className="bg-white rounded-xl overflow-hidden border border-gray-100 hover:shadow-md transition-shadow active:scale-[0.98] cursor-pointer"
+            onClick={() => router.push(`/product/${product.id}`)}
+          >
+            {/* Image */}
+            <div className="aspect-[4/5] bg-gray-100 relative overflow-hidden">
+              <img
+                src={product.image}
+                alt={product.title}
+                className="w-full h-full object-cover"
+                loading="lazy"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = 'https://via.placeholder.com/300x300?text=No+Image';
+                }}
+              />
+              {/* Coupon Badge */}
+              {product.couponInfo && (
+                <div className="absolute top-2 left-2 bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full font-medium">
+                  {product.couponInfo}
+                </div>
+              )}
+              {/* Shop Type */}
+              {product.shopType === 1 && (
+                <div className="absolute bottom-2 right-2 bg-red-50 text-red-600 text-[10px] px-1.5 py-0.5 rounded border border-red-100">
+                  天猫
+                </div>
+              )}
+            </div>
+            
+            {/* Info */}
+            <div className="p-2">
+              {/* Title */}
+              <h3 className="text-xs text-gray-800 line-clamp-2 leading-tight min-h-[2.5em]">
+                {product.brandName && <span className="text-red-500 font-medium mr-1">{product.brandName}</span>}
+                {product.title}
+              </h3>
+              
+              {/* Price Row */}
+              <div className="mt-1.5 flex items-end gap-1.5">
+                <span className="text-[10px] text-red-500">¥</span>
+                <span className="text-lg font-bold text-red-500 leading-none">
+                  {product.price}
+                </span>
+                {product.originalPrice && product.originalPrice > product.price && (
+                  <span className="text-[10px] text-gray-400 line-through mb-0.5">
+                    ¥{product.originalPrice}
+                  </span>
+                )}
+                {savings && (
+                  <span className="text-[10px] bg-red-100 text-red-500 px-1 py-0.5 rounded ml-auto">
+                    省¥{savings}
+                  </span>
+                )}
+              </div>
+              
+              {/* Sales + Shop */}
+              <div className="mt-1 flex items-center justify-between text-[10px] text-gray-400">
+                <span>{formatSales(product.monthSales || product.sales)}{text.sales}</span>
+                <span className="truncate max-w-[80px]">{product.shop}</span>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  // 渲染栏目
+  const renderSection = (
+    title: string,
+    products: Product[],
+    loading: boolean,
+    viewMoreLink?: string
+  ) => (
+    <div className="mb-6">
+      {/* Content */}
+      {loading ? (
+        /* 骨架屏 */
+        <div className="grid grid-cols-2 gap-2.5">
+          {[1,2,3,4].map(i => (
+            <div key={i} className="bg-white rounded-xl overflow-hidden border border-gray-100">
+              <div className="aspect-[4/5] bg-gray-200 animate-pulse" />
+              <div className="p-2 space-y-2">
+                <div className="h-3 bg-gray-200 rounded animate-pulse" />
+                <div className="h-3 bg-gray-200 rounded w-3/4 animate-pulse" />
+                <div className="flex gap-1">
+                  <div className="h-5 w-16 bg-gray-200 rounded animate-pulse" />
+                  <div className="h-5 w-12 bg-gray-200 rounded animate-pulse" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : products.length > 0 ? (
+        renderProductGrid(products)
+      ) : (
+        <div className="text-center py-8 text-sm text-gray-400">
+          {text.noData}
+        </div>
+      )}
+    </div>
+  );
+
   // 翻译分类名称
   const translateCatName = (name: string) => {
-    // Simple mapping for common categories
     const map: Record<string, Record<string, string>> = {
       '美食': { en: 'Food', ar: 'طعام', ru: 'Еда', es: 'Comida' },
       '女装': { en: 'Women', ar: 'نساء', ru: 'Женщины', es: 'Mujeres' },
@@ -320,7 +549,7 @@ export default function SearchSourcePage() {
       '箱包': { en: 'Bags', ar: 'حقائب', ru: 'Сумки', es: 'Bolsos' },
       '配饰': { en: 'Accessories', ar: 'إكسسوارات', ru: 'Аксессуары', es: 'Accesorios' },
     };
-    return map[name]?.[currentLang] || name;
+    return map[name]?.[lang] || name;
   };
 
   return (
@@ -368,120 +597,82 @@ export default function SearchSourcePage() {
       </div>
 
       <div className="max-w-4xl mx-auto px-3">
-        {/* Horizontal Category Navigation */}
+        {/* Horizontal Category Navigation - 始终显示 */}
         <div className="py-3 border-b">
-            {catLoading ? (
-              <div className="flex gap-4 animate-pulse overflow-x-auto">
-                {[1,2,3,4,5,6].map(i => (
-                  <div key={i} className="h-6 w-16 bg-gray-200 rounded-full flex-shrink-0" />
+          {catLoading ? (
+            <div className="flex gap-4 animate-pulse overflow-x-auto">
+              {[1,2,3,4,5,6].map(i => (
+                <div key={i} className="h-6 w-16 bg-gray-200 rounded-full flex-shrink-0" />
+              ))}
+            </div>
+          ) : (
+            <div className="flex gap-1 overflow-x-auto pb-1 scrollbar-hide -mx-3 px-3">
+              {categories.map((cat) => (
+                <button
+                  key={cat.cid}
+                  onClick={() => {
+                    setActiveCategory(cat.cid);
+                    handleCategorySearch(cat.cname);
+                  }}
+                  className={`px-4 py-1.5 rounded-full text-sm whitespace-nowrap flex-shrink-0 transition-colors ${
+                    activeCategory === cat.cid 
+                      ? 'bg-orange-500 text-white' 
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {translateCatName(cat.cname)}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* 4大栏目 - 放在猜你喜欢之前 */}
+        {/* 暂时隐藏未跑通的栏目 */}
+        {/* {renderSection(text.hotSales, hotSales, hotSalesLoading, '/tools/search-source?cat=hot')} */}
+        {renderSection(text.highCommission, highCommission, highCommissionLoading, '/tools/search-source?cat=commission')}
+        {/* {renderSection(text.nineNine, nineNine, nineNineLoading, '/tools/search-source?cat=nine')} */}
+        {/* {renderSection(text.dailyHot, dailyHot, dailyHotLoading, '/tools/search-source?cat=daily')} */}
+
+        {/* Section Header - 猜你喜欢 */}
+        <div className="flex items-center gap-2 py-3">
+          <span className="text-sm font-bold text-gray-800">{text.guessYouLike}</span>
+        </div>
+
+        {/* Products Grid - 猜你喜欢 */}
+        {(products.length > 0 || !guessLoading) && (
+          <div className="pb-3">
+            {products.length > 0 ? (
+              renderProductGrid(products)
+            ) : guessLoading ? (
+              /* 骨架屏 */
+              <div className="grid grid-cols-2 gap-2.5">
+                {[1,2,3,4].map(i => (
+                  <div key={i} className="bg-white rounded-xl overflow-hidden border border-gray-100">
+                    <div className="aspect-[4/5] bg-gray-200 animate-pulse" />
+                    <div className="p-2 space-y-2">
+                      <div className="h-3 bg-gray-200 rounded animate-pulse" />
+                      <div className="h-3 bg-gray-200 rounded w-3/4 animate-pulse" />
+                      <div className="flex gap-1">
+                        <div className="h-5 w-16 bg-gray-200 rounded animate-pulse" />
+                        <div className="h-5 w-12 bg-gray-200 rounded animate-pulse" />
+                      </div>
+                    </div>
+                  </div>
                 ))}
               </div>
+            ) : guessProducts.length > 0 ? (
+              renderProductGrid(guessProducts)
             ) : (
-              <div className="flex gap-1 overflow-x-auto pb-1 scrollbar-hide -mx-3 px-3">
-                {categories.map((cat, idx) => (
-                  <button
-                    key={cat.cid}
-                    onClick={() => {
-                      setActiveCategory(cat.cid);
-                      handleCategorySearch(cat.cname);
-                    }}
-                    className={`px-4 py-1.5 rounded-full text-sm whitespace-nowrap flex-shrink-0 transition-colors ${
-                      activeCategory === cat.cid 
-                        ? 'bg-orange-500 text-white' 
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    {translateCatName(cat.cname)}
-                  </button>
-                ))}
+              <div className="text-center py-8 text-sm text-gray-400">
+                {text.noData}
               </div>
             )}
           </div>
-
-
-        {/* Section Header - Guess You Like */}
-        {!products.length && (
-          <div className="flex items-center gap-2 py-3">
-            <span className="text-sm font-bold text-gray-800">{text.guessYouLike}</span>
-          </div>
         )}
 
-        {/* Products Grid */}
-        {(products.length > 0 || !guessLoading) && (
-          <div className="grid grid-cols-2 gap-2.5 py-3">
-            {(products.length > 0 ? products : guessProducts).map(product => {
-              const savings = getSavings(product);
-              return (
-                <div 
-                  key={product.id} 
-                  className="bg-white rounded-xl overflow-hidden border border-gray-100 hover:shadow-md transition-shadow active:scale-[0.98] cursor-pointer"
-                  onClick={() => router.push(`/product/${product.id}`)}
-                >
-                  {/* Image */}
-                  <div className="aspect-[4/5] bg-gray-100 relative overflow-hidden">
-                    <img
-                      src={product.image}
-                      alt={product.title}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = 'https://via.placeholder.com/300x300?text=No+Image';
-                      }}
-                    />
-                    {/* Coupon Badge */}
-                    {product.couponInfo && (
-                      <div className="absolute top-2 left-2 bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full font-medium">
-                        {product.couponInfo}
-                      </div>
-                    )}
-                    {/* Shop Type */}
-                    {product.shopType === 1 && (
-                      <div className="absolute bottom-2 right-2 bg-red-50 text-red-600 text-[10px] px-1.5 py-0.5 rounded border border-red-100">
-                        天猫
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Info */}
-                  <div className="p-2">
-                    {/* Title */}
-                    <h3 className="text-xs text-gray-800 line-clamp-2 leading-tight min-h-[2.5em]">
-                      {product.brandName && <span className="text-red-500 font-medium mr-1">{product.brandName}</span>}
-                      {product.title}
-                    </h3>
-                    
-                    {/* Price Row */}
-                    <div className="mt-1.5 flex items-end gap-1.5">
-                      <span className="text-[10px] text-red-500">¥</span>
-                      <span className="text-lg font-bold text-red-500 leading-none">
-                        {product.price}
-                      </span>
-                      {product.originalPrice && product.originalPrice > product.price && (
-                        <span className="text-[10px] text-gray-400 line-through mb-0.5">
-                          ¥{product.originalPrice}
-                        </span>
-                      )}
-                      {savings && (
-                        <span className="text-[10px] bg-red-100 text-red-500 px-1 py-0.5 rounded ml-auto">
-                          省¥{savings}
-                        </span>
-                      )}
-                    </div>
-                    
-                    {/* Sales + Shop */}
-                    <div className="mt-1 flex items-center justify-between text-[10px] text-gray-400">
-                      <span>{formatSales(product.monthSales || product.sales)}{text.sales}</span>
-                      <span className="truncate max-w-[80px]">{product.shop}</span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Load More - Guess You Like */}
-        {!products.length && (
+        {/* Load More - 猜你喜欢 */}
+        {!products.length && guessProducts.length > 0 && (
           <div className="py-4 text-center">
             {hasMoreGuess ? (
               <button
@@ -497,8 +688,6 @@ export default function SearchSourcePage() {
           </div>
         )}
       </div>
-
-
     </div>
   );
 }

@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
 import { ArrowLeft, ShoppingCart, Heart, Share2 } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { getSupabaseBrowserClient } from '@/lib/supabase';
 
 interface ProductDetail {
   id: string;
@@ -37,6 +37,7 @@ export default function ProductDetailPage() {
   // 身份验证检查
   useEffect(() => {
     const checkAuth = async () => {
+      const supabase = getSupabaseBrowserClient();
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         // 未登录，跳转到登录页并带回跳地址

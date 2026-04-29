@@ -4,14 +4,22 @@ import { createClient } from '@supabase/supabase-js';
 const VOLCENGINE_API_KEY = process.env.VOLCENGINE_API_KEY;
 const VOLCENGINE_ENDPOINT = 'https://ark.cn-beijing.volces.com/api/v3/images/generations';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// 延迟初始化 Supabase 客户端，避免构建时因环境变量缺失报错
+function getSupabaseClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error('Missing Supabase environment variables');
+  }
+  
+  return createClient(supabaseUrl, supabaseKey);
+}
 
 // 检查表是否存在
 async function checkTableExists(tableName: string): Promise<boolean> {
   try {
+    const supabase = getSupabaseClient();
     const { error } = await supabase
       .from(tableName)
       .select('id')
@@ -24,6 +32,7 @@ async function checkTableExists(tableName: string): Promise<boolean> {
 
 export async function POST(req: NextRequest) {
   try {
+    const supabase = getSupabaseClient();
     const authHeader = req.headers.get('authorization');
     let userId: string | null = null;
     let userEmail: string | null = null;

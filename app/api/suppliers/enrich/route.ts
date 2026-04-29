@@ -1,12 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
 const ALIBABA1688_APPCODE = process.env.ALIBABA1688_APPCODE;
+
+// 延迟初始化 Supabase 客户端，避免构建时因环境变量缺失报错
+function getSupabaseClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error('Missing Supabase environment variables');
+  }
+  
+  return createClient(supabaseUrl, supabaseKey);
+}
 const API_ENDPOINT = 'https://cbu.market.alicloudapi.com/deepsearch';
 
 // 解析 SSE 流数据
@@ -156,6 +163,9 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { limit = 10, offset = 0 } = body;
 
+    // 延迟获取 Supabase 客户端
+    const supabase = getSupabaseClient();
+    
     // 获取需要补全的供应商（店铺链接为空）
     const { data: suppliers, error: fetchError } = await supabase
       .from('suppliers')
