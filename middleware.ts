@@ -13,6 +13,7 @@ const publicPaths = [
   '/tools/sourcing-list',
   '/tools/image-design',
   '/tools/consultation',
+  '/search/single',
 ];
 
 // 公开API路由（无需登录）
@@ -24,6 +25,12 @@ const publicApiPrefixes = [
   '/api/categories',
   '/api/guess-you-like',
   '/api/debug-network',
+  '/api/nine-nine',
+  '/api/daily-hot',
+  '/api/hot-sales',
+  '/api/high-commission',
+  '/api/test-dataoke',
+  '/api/proxy',
 ];
 
 export async function middleware(request: NextRequest) {
