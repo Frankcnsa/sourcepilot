@@ -224,46 +224,52 @@ export default function SearchSourceContent() {
     setDailyHotLoading(true);
     setGuessLikeLoading(true);
 
-    // 实时热销榜
+    // 实时热销榜 - 返回 { data: { data: [...] } }
     fetch('/api/proxy', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'real-time', pageSize: 10, page: 1, lang })
+      body: JSON.stringify({ action: 'real-time', pageSize: 10, page: 1 })
     })
       .then(r => r.json())
       .then(data => {
         if (data.success && data.data) {
-          setRealTime(processProducts(data.data));
+          const items = data.data.data || data.data.list || data.data || [];
+          console.log('real-time items:', items.length, items[0]?.title);
+          setRealTime(items.slice(0, 10));
         }
         setRealTimeLoading(false);
       })
       .catch(() => setRealTimeLoading(false));
 
-    // 9.9包邮
+    // 9.9包邮 - 返回数组或 { list: [...] }
     fetch('/api/proxy', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'nine-nine', pageSize: 10, page: 1, lang })
+      body: JSON.stringify({ action: 'nine-nine', pageSize: 10, page: 1 })
     })
       .then(r => r.json())
       .then(data => {
         if (data.success && data.data) {
-          setNineNine(processProducts(data.data));
+          const items = Array.isArray(data.data) ? data.data : (data.data.list || data.data.data || []);
+          console.log('nine-nine items:', items.length);
+          setNineNine(items.slice(0, 10));
         }
         setNineNineLoading(false);
       })
       .catch(() => setNineNineLoading(false));
 
-    // 高佣精选
+    // 高佣精选 - 返回 { list: [...] }
     fetch('/api/proxy', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'hot-products', pageSize: 10, page: 1, lang })
+      body: JSON.stringify({ action: 'hot-products', pageSize: 10, page: 1 })
     })
       .then(r => r.json())
       .then(data => {
         if (data.success && data.data) {
-          setHighCommission(processProducts(data.data));
+          const items = data.data.list || data.data.data || data.data || [];
+          console.log('hot-products items:', items.length);
+          setHighCommission(items.slice(0, 10));
         }
         setHighCommissionLoading(false);
       })
@@ -273,12 +279,14 @@ export default function SearchSourceContent() {
     fetch('/api/proxy', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'daily-hot', pageSize: 10, page: 1, lang })
+      body: JSON.stringify({ action: 'daily-hot', pageSize: 10, page: 1 })
     })
       .then(r => r.json())
       .then(data => {
         if (data.success && data.data) {
-          setDailyHot(processProducts(data.data));
+          const items = data.data.list || data.data.data || data.data || [];
+          console.log('daily-hot items:', items.length);
+          setDailyHot(items.slice(0, 10));
         }
         setDailyHotLoading(false);
       })
@@ -288,12 +296,14 @@ export default function SearchSourceContent() {
     fetch('/api/proxy', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'guess-you-like', size: 10, page: 1, lang })
+      body: JSON.stringify({ action: 'guess-you-like', size: 10, page: 1 })
     })
       .then(r => r.json())
       .then(data => {
         if (data.success && data.data) {
-          setGuessLike(processProducts(data.data));
+          const items = data.data.list || data.data.data || data.data || [];
+          console.log('guess-you-like items:', items.length);
+          setGuessLike(items.slice(0, 10));
         }
         setGuessLikeLoading(false);
       })

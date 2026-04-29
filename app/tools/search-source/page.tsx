@@ -1,4 +1,4 @@
-import SearchSourceContent from './SearchSourceContent.test';
+import SearchSourceContent from './SearchSourceContent';
 import AppLayout from '@/components/AppLayout';
 
 export const dynamic = 'force-dynamic';
