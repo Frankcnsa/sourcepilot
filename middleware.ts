@@ -1,42 +1,16 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
-// 公开页面（无需登录）
-const publicPaths = [
-  '/',
-  '/login',
-  '/register',
-  '/forgot-password',
-  '/reset-password',
-  '/auth/confirm',
-  '/tools/search-source',
-  '/tools/sourcing-list',
-  '/tools/image-design',
-  '/tools/consultation',
-  '/search/single',
-];
-
-// 公开API路由（无需登录）
-const publicApiPrefixes = [
-  '/api/search',
-  '/api/convert-link',
-  '/api/sourcing-items',
-  '/api/hot-products',
-  '/api/categories',
-  '/api/guess-you-like',
-  '/api/debug-network',
-  '/api/nine-nine',
-  '/api/daily-hot',
-  '/api/hot-sales',
-  '/api/high-commission',
-  '/api/test-dataoke',
-  '/api/proxy',
-];
-
 export async function middleware(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({
-    request,
-  });
+  const pathname = request.nextUrl.pathname;
+
+  // 放行所有单页相关路由（无需登录）
+  if (pathname.includes('/search/single') || pathname.includes('/api/proxy')) {
+    console.log('Middleware: bypassing auth for path:', pathname);
+    return NextResponse.next({
+      request,
+    });
+  }
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -59,22 +33,8 @@ export async function middleware(request: NextRequest) {
   // 刷新 session
   const { data: { session } } = await supabase.auth.getSession();
 
-  const pathname = request.nextUrl.pathname;
-
-  // 强制放行：单页路由和代理API（无需登录，使用includes匹配）
-  if (pathname.includes('/search/single') || pathname.includes('/api/proxy')) {
-    console.log('Middleware: bypassing auth for path:', pathname);
-    return supabaseResponse;
-  }
-
-  // 检查是否为公开页面
-  const isPublicPath = publicPaths.some(path => pathname === path || pathname.startsWith(path + '/'));
-  
-  // 检查是否为公开API
-  const isPublicApi = publicApiPrefixes.some(prefix => pathname.startsWith(prefix));
-
-  // 未登录且访问非公开页面/非公开API → 重定向到登录
-  if (!session && !isPublicPath && !isPublicApi) {
+  // 未登录 → 重定向到登录
+  if (!session) {
     const loginUrl = new URL('/login', request.url);
     return NextResponse.redirect(loginUrl);
   }
@@ -88,8 +48,9 @@ export async function middleware(request: NextRequest) {
   return supabaseResponse;
 }
 
+// 匹配所有非静态路径
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*',
   ],
 };
