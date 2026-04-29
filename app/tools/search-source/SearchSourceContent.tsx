@@ -196,12 +196,28 @@ export default function SearchSourceContent() {
       .catch(() => {});
   }, []);
 
+  // 统一处理API返回的商品数据
+  const processProducts = (data: any): Product[] => {
+    if (!data) return [];
+    // data 本身就是数组
+    if (Array.isArray(data)) return data;
+    // { list: [...] }
+    if (data.list && Array.isArray(data.list)) return data.list;
+    // { data: [...] } (real-time 返回的结构)
+    if (data.data && Array.isArray(data.data)) return data.data;
+    // { data: { data: [...] } } (real-time 嵌套结构)
+    if (data.data?.data && Array.isArray(data.data.data)) return data.data.data;
+    // { resultList: [...] }
+    if (data.resultList && Array.isArray(data.resultList)) return data.resultList;
+    return [];
+  };
+
   // 加载5大栏目
   useEffect(() => {
     loadAllSections();
   }, [lang]);
 
-  const loadAllSections = async () => {
+  const loadAllSections = () => {
     setRealTimeLoading(true);
     setNineNineLoading(true);
     setHighCommissionLoading(true);
@@ -217,9 +233,7 @@ export default function SearchSourceContent() {
       .then(r => r.json())
       .then(data => {
         if (data.success && data.data) {
-          // real-time 返回 { data: { data: [...] } }
-          const products = Array.isArray(data.data) ? data.data : (data.data.data || data.data.list || []);
-          setRealTime(products);
+          setRealTime(processProducts(data.data));
         }
         setRealTimeLoading(false);
       })
@@ -234,8 +248,7 @@ export default function SearchSourceContent() {
       .then(r => r.json())
       .then(data => {
         if (data.success && data.data) {
-          const products = Array.isArray(data.data) ? data.data : (data.data.list || data.data.data || []);
-          setNineNine(products);
+          setNineNine(processProducts(data.data));
         }
         setNineNineLoading(false);
       })
@@ -250,8 +263,7 @@ export default function SearchSourceContent() {
       .then(r => r.json())
       .then(data => {
         if (data.success && data.data) {
-          const products = Array.isArray(data.data) ? data.data : (data.data.list || data.data.data || []);
-          setHighCommission(products);
+          setHighCommission(processProducts(data.data));
         }
         setHighCommissionLoading(false);
       })
@@ -265,7 +277,9 @@ export default function SearchSourceContent() {
     })
       .then(r => r.json())
       .then(data => {
-        if (data.success && data.data) setDailyHot(Array.isArray(data.data) ? data.data : (data.data.list || []));
+        if (data.success && data.data) {
+          setDailyHot(processProducts(data.data));
+        }
         setDailyHotLoading(false);
       })
       .catch(() => setDailyHotLoading(false));
@@ -278,7 +292,9 @@ export default function SearchSourceContent() {
     })
       .then(r => r.json())
       .then(data => {
-        if (data.success && data.data) setGuessLike(Array.isArray(data.data) ? data.data : (data.data.list || []));
+        if (data.success && data.data) {
+          setGuessLike(processProducts(data.data));
+        }
         setGuessLikeLoading(false);
       })
       .catch(() => setGuessLikeLoading(false));
@@ -298,9 +314,7 @@ export default function SearchSourceContent() {
       });
       const data = await res.json();
       if (data.success && data.data) {
-        // search 返回 { list: [...] }
-        const products = Array.isArray(data.data) ? data.data : (data.data.list || data.data.data || []);
-        setProducts(products);
+        setProducts(processProducts(data.data));
       }
     } catch (e) {
       console.error('Search failed:', e);
