@@ -61,8 +61,9 @@ export async function middleware(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
 
-  // 强制放行：单页路由和代理API（无需登录）
-  if (pathname.startsWith('/search/single') || pathname.startsWith('/api/proxy')) {
+  // 强制放行：单页路由和代理API（无需登录，使用includes匹配）
+  if (pathname.includes('/search/single') || pathname.includes('/api/proxy')) {
+    console.log('Middleware: bypassing auth for path:', pathname);
     return supabaseResponse;
   }
 
