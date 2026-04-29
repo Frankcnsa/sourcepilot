@@ -1,38 +1,41 @@
-'use client';
+// 服务端组件：直接代理单页内容（无混合内容问题）
+export default async function SinglePage({
+  params,
+}: {
+  params: { pageName: string };
+}) {
+  const pageName = params.pageName;
 
-import { useParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
-
-export default function SinglePage() {
-  const params = useParams();
-  const pageName = params.pageName as string;
-  const [proxyUrl, setProxyUrl] = useState('');
-
-  useEffect(() => {
-    if (!pageName) return;
-    // 同源代理API（HTTPS）
-    setProxyUrl(`/api/proxy/single/${pageName}`);
-  }, [pageName]);
-
-  if (!proxyUrl) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-        <p>Loading...</p>
-      </div>
-    );
+  // 白名单校验
+  const ALLOWED = ['9.9-baoyou', 'baiyi-butie', 'dongdongqiang', 'fengqiangbang', 'gaoyong-jingxuan', 'zheshangzhe'];
+  if (!ALLOWED.includes(pageName)) {
+    return <h1>Invalid page</h1>;
   }
 
-  return (
-    <div style={{ width: '100vw', height: '100vh', overflow: 'hidden', position: 'relative' }}>
-      {/* 翻译切换栏（可选，暂时隐藏） */}
+  try {
+    // 服务端请求腾讯云单页（无浏览器混合内容限制）
+    const targetUrl = `http://111.230.10.101:3003/${pageName}.html`;
+    const res = await fetch(targetUrl, {
+      headers: { 'User-Agent': 'SourcePilot-Proxy/1.0' },
+      // 超时10秒
+      signal: AbortSignal.timeout(10000),
+    });
 
-      {/* 主iframe（同源代理，无混合内容问题） */}
-      <iframe
-        src={proxyUrl}
-        style={{ width: '100%', height: '100%', border: 'none' }}
-        title={pageName}
-        allow="clipboard-write"
+    if (!res.ok) {
+      return <h1>Upstream error: {res.statusText}</h1>;
+    }
+
+    const html = await res.text();
+
+    // 直接返回单页HTML（服务端渲染）
+    return (
+      <div
+        style={{ width: '100vw', height: '100vh', overflow: 'hidden' }}
+        dangerouslySetInnerHTML={{ __html: html }}
       />
-    </div>
-  );
+    );
+  } catch (error: any) {
+    console.error('Proxy error:', error);
+    return <h1>Failed to load page</h1>;
+  }
 }
