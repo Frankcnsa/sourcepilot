@@ -1,41 +1,28 @@
-// 服务端组件：直接代理单页内容（无混合内容问题）
-export default async function SinglePage({
-  params,
-}: {
-  params: { pageName: string };
-}) {
-  const pageName = params.pageName;
+'use client';
 
-  // 白名单校验
-  const ALLOWED = ['9.9-baoyou', 'baiyi-butie', 'dongdongqiang', 'fengqiangbang', 'gaoyong-jingxuan', 'zheshangzhe'];
-  if (!ALLOWED.includes(pageName)) {
-    return <h1>Invalid page</h1>;
-  }
+import { useParams } from 'next/navigation';
 
-  try {
-    // 服务端请求腾讯云单页（无浏览器混合内容限制）
-    const targetUrl = `http://111.230.10.101:3003/${pageName}.html`;
-    const res = await fetch(targetUrl, {
-      headers: { 'User-Agent': 'SourcePilot-Proxy/1.0' },
-      // 超时10秒
-      signal: AbortSignal.timeout(10000),
-    });
+export default function SinglePage() {
+  const params = useParams();
+  const pageName = params.pageName as string;
 
-    if (!res.ok) {
-      return <h1>Upstream error: {res.statusText}</h1>;
-    }
-
-    const html = await res.text();
-
-    // 直接返回单页HTML（服务端渲染）
+  if (!pageName) {
     return (
-      <div
-        style={{ width: '100vw', height: '100vh', overflow: 'hidden' }}
-        dangerouslySetInnerHTML={{ __html: html }}
-      />
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <p>Loading...</p>
+      </div>
     );
-  } catch (error: any) {
-    console.error('Proxy error:', error);
-    return <h1>Failed to load page</h1>;
   }
+
+  return (
+    <div style={{ width: '100vw', height: '100vh', overflow: 'hidden' }}>
+      {/* 直接加载同域静态单页（HTTPS，无混合内容，无需登录） */}
+      <iframe
+        src={`/${pageName}.html`}
+        style={{ width: '100%', height: '100%', border: 'none' }}
+        title={pageName}
+        allow="clipboard-write"
+      />
+    </div>
+  );
 }
