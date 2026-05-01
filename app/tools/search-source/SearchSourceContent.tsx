@@ -159,16 +159,31 @@ export default function SearchSourceContent() {
   useEffect(() => {
     const loadCategories = async () => {
       try {
-        const res = await fetch('/data/categories-translations.json');
+        // 调用腾讯云代理（已包含翻译）
+        const res = await fetch('/api/proxy', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'super-categories', lang })
+        });
         const data = await res.json();
-        if (data.categories) {
-          setCategories(data.categories);
+        if (data.success && data.data) {
+          setCategories(data.data);
         } else {
-          setCategories([]);
+          // 降级：使用本地数据
+          const localRes = await fetch('/data/categories-translations.json');
+          const localData = await localRes.json();
+          if (localData.categories) setCategories(localData.categories);
+          else setCategories([]);
         }
       } catch (e) {
-        console.warn('[Categories] 加载失败:', e);
-        setCategories([]);
+        console.warn('[Categories] 加载失败，使用本地数据:', e);
+        try {
+          const localRes = await fetch('/data/categories-translations.json');
+          const localData = await localRes.json();
+          if (localData.categories) setCategories(localData.categories);
+        } catch (e2) {
+          setCategories([]);
+        }
       }
     };
     
@@ -260,19 +275,11 @@ export default function SearchSourceContent() {
     if (!q.trim()) return;
     setLoading(true);
     try {
-      // ❗️ 关键：无论什么语言，先翻成中文再给API
-      let searchTerm = q;
-      if (lang !== 'zh') {
-        try {
-          searchTerm = await translateText(q, lang, 'zh');
-        } catch (e) {
-          console.warn('翻译查询词失败，使用原文:', e);
-        }
-      }
+      // 直接调用腾讯云API，翻译在服务器端完成
       const res = await fetch('/api/proxy', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'search', query: searchTerm, pageSize: 20, page: 1 })
+        body: JSON.stringify({ action: 'search', query: q, pageSize: 20, page: 1, lang })
       });
       const data = await res.json();
       if (data.success && data.data) {
@@ -481,45 +488,56 @@ export default function SearchSourceContent() {
           </button>
         </div>
       </div>
-
-      {/* 分类导航 */}
+      {/* 分类导航：独立容器 */}
       {categories.length > 0 && (
         <div className="bg-white border-b">
+          {/* 一级分类：横向滚动 */}
           <div className="max-w-6xl mx-auto px-3 py-2 flex gap-3 overflow-x-auto scrollbar-hide">
-            {categories.map(cat => (
+            {categories.map((cat: any) => (
               <button
                 key={cat.cid}
                 onClick={() => {
                   setActiveCategory(activeCategory === cat.cid ? null : cat.cid);
                   setShowSubMenu(activeCategory !== cat.cid);
-                  if (cat.cname) handleSearch(cat.cname);
+                  // 注意：点击一级分类，只显示二级，不触发搜索
                 }}
                 className={`flex-shrink-0 flex flex-col items-center gap-1 px-3 py-1.5 rounded-xl transition-colors ${
                   activeCategory === cat.cid ? 'bg-orange-50 text-orange-600' : 'hover:bg-gray-50'
                 }`}
               >
                 {cat.cpic && <img src={cat.cpic} alt={cat.cname} className="w-8 h-8 rounded-lg" />}
-                <span className="text-xs whitespace-nowrap">{cat.translations?.[lang] || cat.cname}</span>
+                <span className="text-xs whitespace-nowrap">
+                  {(cat.translations && cat.translations[lang]) || cat.cname}
+                </span>
               </button>
             ))}
           </div>
 
-          {/* 二级分类浮层 */}
-          {showSubMenu && activeCategory && categories.find(c => c.cid === activeCategory)?.subcategories && (
-            <div className="max-w-6xl mx-auto px-3 pb-3">
-              <div className="flex gap-2 flex-wrap">
-                {categories.find(c => c.cid === activeCategory)!.subcategories!.map((sub: any) => (
-                  <button
-                    key={sub.subcid}
-                    onClick={() => {
-                      handleSearch(sub.translations?.[lang] || sub.subcname);
-                      setShowSubMenu(false);
-                    }}
-                    className="px-3 py-1 bg-gray-100 rounded-full text-sm hover:bg-orange-50 hover:text-orange-600 transition-colors"
-                  >
-                    {sub.translations?.[lang] || sub.subcname}
-                  </button>
-                ))}
+          {/* 二级分类：在一级下方独立区域，有背景分隔 */}
+          {showSubMenu && activeCategory && categories.find((c: any) => c.cid === activeCategory)?.subcategories && (
+            <div className="bg-gray-50 border-t">
+              <div className="max-w-6xl mx-auto px-3 py-3">
+                <div className="flex gap-2 flex-wrap">
+                  {categories.find((c: any) => c.cid === activeCategory)!.subcategories!.map((sub: any) => (
+                    <button
+                      key={sub.subcid}
+                      onClick={() => {
+                        const searchTerm = (sub.translations && sub.translations[lang]) || sub.subcname;
+                        handleSearch(searchTerm);
+                        setShowSubMenu(false);
+                      }}
+                      className="px-3 py-1 bg-white rounded-full text-sm hover:bg-orange-50 hover:text-orange-600 transition-colors"
+                    >
+                      {(sub.translations && sub.translations[lang]) || sub.subcname}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
               </div>
             </div>
           )}
