@@ -3,31 +3,122 @@
     {
       "cid": 6,
       "cname": "美食",
+      "cpic": "https://img.alicdn.com/imgextra/i3/2053469401/O1CN01hKSnoI2JJhz2bCgzy_!!2053469401.png",
       "translations": {
-        "en": "Food",
+        "en": "Food | | | Spicy Snacks | | | Quick Breakfast | | | Leisure Snacks | | | Fresh Fruits and Vegetables | | | Drinks and Beverages | | | Happy Dessert | | Nut Candied Fruit | | | Lazy Quick Food | | | Food and Oil Seasoning | | | Health Tea | | | | | Meat Cooked Food | | | | | Home Daily Use | | | | | | | | | Fine Household Cleaning and Care Products | | | | | | | | | | | | | | | | | | | | | | | | skirt | | | Casual Pants | | | Sunscreen Jacket | | | Shirt | | Wide Leg Pants | | | Half Skirt | | | Jeans | | | Beauty Makeup | | | Isolation Sunscreen | | | C Lipstick | | | Moisturizing Water Cream | | | | Kitchen Mask | | | | | Whitening Kit | | | | | Cosmetic Fragrance | | | | | | | | | | | | | | | | Body Cleansing | Keyboard | | | | | | | | | | | | | household appliances | | | Shaver | | | Mobile phone bracket | | | Hair dryer | | | Shoes | | | Sandals | | | Women's shoes | | | White shoes | | | Sports shoes | | | Casual shoes | | | Men's shoes | | | | | Canvas shoes | | | | | | Spring and summer sandals and slippers | | | | | Men's clothing | | | | | | Short sleeves/T-shirt | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | supplies | | | Nutrition Supplies | | | Baby Milk Powder | | | Pregnant Mother Supplies | | | Urine Pants Wet Wipes | | | Fashionable Children's Wear | | | Early Education and Education | | | Children's Protection | | | Children's Shoes | | | | Home Decoration | | | Home Decoration | | | Car Accessories | | | | Special Hardware | | | | | | | Basic Electrical and Building Materials | |",
         "es": "Comida",
-        "ru": "Еда",
-        "ar": "الطعام"
+        "ru": "Для гурманов",
+        "ar": "طعام جيد | | وجبات خفيفة حارة للنساء | | إفطار سريع | | وجبات خفيفة غير رسمية تحكم | | | رائحة الاستحمام | | تنظيف المطبخ والحمام | | غسالات بسيطة | | منتجات طاردة للحشرات | | ملابس نسائية | | قمصان قاعدية | | تنورة حلوة | | | أحمر الشفاه والعطر | | معطف مضاد للشمس العناية: | أحذية غير رسمية للتغذية | | أحذية للأم والطفل | | أحذية قماشية | | نعال الربيع والصيف | | ملابس الرجال | | بأكمام قصيرة/تي شيرت | | | سراويل غير رسمية اللوازم | | المكملات الغذائية | | مسحوق حليب الأطفال | | | منتجات الأم الحامل أدوات الكتابة | | الكتب السمعية والبصرية | | زخرفة السيارات | | قرطاسية المكاتب | | يجب أن يكون للامتحان | | مواد الرسم | | هدايا فنية | | أجهزة السيارات | | |/حزام | | إكسسوارات | أذن/رقبة | | حقيبة السلسلة | | حقيبة اليد | | | حقيبة قماش | | حقيبة جلدية | | | محفظة | | | رياضة في الهواء الطلق | | معدات اللياقة البدنية | | معدات صيد الأسماك"
       },
       "subcategories": [
         {
           "subcid": 116908,
           "subcname": "辣味零食",
           "translations": {
-            "en": "Spicy Snacks",
-            "es": "Bocadillos picantes",
-            "ru": "Острые закуски",
-            "ar": "وجبات حارة"
+            "en": "Car-mounted electrical appliances",
+            "es": "Aperitivos picantes",
+            "ru": "辣味零食",
+            "ar": "辣味零食"
           }
         },
         {
           "subcid": 90318,
           "subcname": "快捷早餐",
           "translations": {
-            "en": "Quick Breakfast",
+            "en": "Accessories || Earrings/Neckchains",
             "es": "Desayuno rápido",
-            "ru": "Быстрый завтрак",
-            "ar": "إفطار سريع"
+            "ru": "|| Быстрый завтрак",
+            "ar": "快捷早餐"
+          }
+        },
+        {
+          "subcid": 8409,
+          "subcname": "休闲零食",
+          "translations": {
+            "en": "Ring/Bracelet",
+            "es": "Aperitivos informales",
+            "ru": "| Закуски для отдыха | Свежие фрукты и овощи",
+            "ar": "休闲零食"
+          }
+        },
+        {
+          "subcid": 117943,
+          "subcname": "生鲜果蔬",
+          "translations": {
+            "en": "Sunscreen Hat | | | Watch",
+            "es": "Frutas y verduras frescas",
+            "ru": "|| Сладкие десерты",
+            "ar": "生鲜果蔬"
+          }
+        },
+        {
+          "subcid": 117945,
+          "subcname": "酒水饮料",
+          "translations": {
+            "en": "Fine hair accessories || | Glasses/Sunglasses | | Belt/Belt | | Other accessories | | | Running | | | | | | | Messenger bag | | | | | Sports | | | | | Sports | | | | | Sports | | | | | | Sports | | | | | | | Sports | | | | Sports | | | | | | | Sports | | | | | | |",
+            "es": "Bebidas y bebidas",
+            "ru": "|| Ореховые цукаты",
+            "ar": "酒水饮料"
+          }
+        },
+        {
+          "subcid": 116909,
+          "subcname": "幸福甜品",
+          "translations": {
+            "en": "幸福甜品",
+            "es": "Postres felices",
+            "ru": "幸福甜品",
+            "ar": "幸福甜品"
+          }
+        },
+        {
+          "subcid": 116914,
+          "subcname": "坚果蜜饯",
+          "translations": {
+            "en": "坚果蜜饯",
+            "es": "坚果蜜饯",
+            "ru": "坚果蜜饯",
+            "ar": "坚果蜜饯"
+          }
+        },
+        {
+          "subcid": 117944,
+          "subcname": "懒人速食",
+          "translations": {
+            "en": "懒人速食",
+            "es": "|| Lavado y cuidado del cabello control",
+            "ru": "懒人速食",
+            "ar": "懒人速食"
+          }
+        },
+        {
+          "subcid": 117942,
+          "subcname": "粮油调味",
+          "translations": {
+            "en": "粮油调味",
+            "es": "Fragancia de baño",
+            "ru": "粮油调味",
+            "ar": "粮油调味"
+          }
+        },
+        {
+          "subcid": 121772,
+          "subcname": "保健茶品",
+          "translations": {
+            "en": "保健茶品",
+            "es": "Limpieza de cocina y baño",
+            "ru": "保健茶品",
+            "ar": "保健茶品"
+          }
+        },
+        {
+          "subcid": 116910,
+          "subcname": "肉食熟食",
+          "translations": {
+            "en": "肉食熟食",
+            "es": "Lavado simple",
+            "ru": "|| Мысли | Уборка | Уборка волос | Уборка волос | контроль | | Красота и аромат для ванны",
+            "ar": "肉食熟食"
           }
         }
       ]
@@ -35,21 +126,1348 @@
     {
       "cid": 4,
       "cname": "居家日用",
+      "cpic": "https://img.alicdn.com/imgextra/i4/2053469401/O1CN01wYZtCv2JJhz38DYaQ_!!2053469401.png",
       "translations": {
-        "en": "Home & Daily Use",
-        "es": "Hogar y uso diario",
-        "ru": "Дом и повседневное испольэование",
-        "ar": "المنزل والاستخدام اليومي"
+        "en": "居家日用",
+        "es": "Productos repelentes de insectos",
+        "ru": "居家日用",
+        "ar": "居家日用"
       },
       "subcategories": [
         {
           "subcid": 86341,
           "subcname": "生活纸巾",
           "translations": {
-            "en": "Tissue & Paper",
-            "es": "Papel higiénico",
-            "ru": "Бумажные изделия",
-            "ar": "مناديل وورق"
+            "en": "生活纸巾",
+            "es": "Ropa de mujer",
+            "ru": "Простая стирка | Средства для борьбы с насекомыми",
+            "ar": "生活纸巾"
+          }
+        },
+        {
+          "subcid": 8122,
+          "subcname": "换季收纳",
+          "translations": {
+            "en": "换季收纳",
+            "es": "| Base de camiseta",
+            "ru": "|| Женская одежда",
+            "ar": "换季收纳"
+          }
+        },
+        {
+          "subcid": 95496,
+          "subcname": "洗发护发",
+          "translations": {
+            "en": "洗发护发",
+            "es": "| Falda dulce",
+            "ru": "洗发护发",
+            "ar": "洗发护发"
+          }
+        },
+        {
+          "subcid": 8150,
+          "subcname": "精致餐具",
+          "translations": {
+            "en": "精致餐具",
+            "es": "精致餐具",
+            "ru": "精致餐具",
+            "ar": "精致餐具"
+          }
+        },
+        {
+          "subcid": 116905,
+          "subcname": "防护用品",
+          "translations": {
+            "en": "防护用品",
+            "es": "防护用品",
+            "ru": "| Сладкие юбки и повседневные брюки",
+            "ar": "防护用品"
+          }
+        },
+        {
+          "subcid": 86342,
+          "subcname": "家庭清洁",
+          "translations": {
+            "en": "家庭清洁",
+            "es": "家庭清洁",
+            "ru": "家庭清洁",
+            "ar": "家庭清洁"
+          }
+        },
+        {
+          "subcid": 97111,
+          "subcname": "呵护女性",
+          "translations": {
+            "en": "呵护女性",
+            "es": "呵护女性",
+            "ru": "呵护女性",
+            "ar": "呵护女性"
+          }
+        },
+        {
+          "subcid": 117947,
+          "subcname": "杯子控",
+          "translations": {
+            "en": "杯子控",
+            "es": "杯子控",
+            "ru": "杯子控",
+            "ar": "杯子控"
+          }
+        },
+        {
+          "subcid": 95495,
+          "subcname": "沐浴香体",
+          "translations": {
+            "en": "沐浴香体",
+            "es": "沐浴香体",
+            "ru": "沐浴香体",
+            "ar": "沐浴香体"
+          }
+        },
+        {
+          "subcid": 86344,
+          "subcname": "厨卫清洁",
+          "translations": {
+            "en": "厨卫清洁",
+            "es": "厨卫清洁",
+            "ru": "| Широкая нога брюки | Макияж | Джинсы | Макияж | Макияж | уход за спортивной обувью | Обувь для снятия макияжа | Очищение и очищение лица",
+            "ar": "厨卫清洁"
+          }
+        },
+        {
+          "subcid": 86343,
+          "subcname": "简约洗漱  ",
+          "translations": {
+            "en": "简约洗漱  ",
+            "es": "|| cuidado",
+            "ru": "简约洗漱  ",
+            "ar": "简约洗漱  "
+          }
+        },
+        {
+          "subcid": 117948,
+          "subcname": "驱虫用品",
+          "translations": {
+            "en": "驱虫用品",
+            "es": "Desmaquillante y limpieza",
+            "ru": "| Уход за кожей для мужчин",
+            "ar": "驱虫用品"
+          }
+        }
+      ]
+    },
+    {
+      "cid": 1,
+      "cname": "女装",
+      "cpic": "https://img.alicdn.com/imgextra/i4/2053469401/O1CN01F08XF82JJi4jMHTZJ_!!2053469401.png",
+      "translations": {
+        "en": "女装",
+        "es": "Esencia de quedarse despierto hasta tarde",
+        "ru": "女装",
+        "ar": "女装"
+      },
+      "subcategories": [
+        {
+          "subcid": 126816,
+          "subcname": "T恤打底 ",
+          "translations": {
+            "en": "T恤打底 ",
+            "es": "Cuidado del cuerpo",
+            "ru": "T恤打底 ",
+            "ar": "T恤打底 "
+          }
+        },
+        {
+          "subcid": 126817,
+          "subcname": "甜美裙装",
+          "translations": {
+            "en": "甜美裙装",
+            "es": "Cuidado de la piel de los hombres",
+            "ru": "甜美裙装",
+            "ar": "甜美裙装"
+          }
+        },
+        {
+          "subcid": 126818,
+          "subcname": "休闲裤",
+          "translations": {
+            "en": "休闲裤",
+            "es": "Electrodomésticos digitales",
+            "ru": "休闲裤",
+            "ar": "休闲裤"
+          }
+        },
+        {
+          "subcid": 126819,
+          "subcname": "防晒外套",
+          "translations": {
+            "en": "防晒外套",
+            "es": "Ventilador fresco",
+            "ru": "防晒外套",
+            "ar": "防晒外套"
+          }
+        },
+        {
+          "subcid": 126815,
+          "subcname": "衬衫",
+          "translations": {
+            "en": "衬衫",
+            "es": "| Auriculares",
+            "ru": "衬衫",
+            "ar": "衬衫"
+          }
+        },
+        {
+          "subcid": 127685,
+          "subcname": "阔腿裤",
+          "translations": {
+            "en": "阔腿裤",
+            "es": "阔腿裤",
+            "ru": "阔腿裤",
+            "ar": "阔腿裤"
+          }
+        },
+        {
+          "subcid": 126959,
+          "subcname": "半身裙",
+          "translations": {
+            "en": "半身裙",
+            "es": "| Soporte para teléfono móvil",
+            "ru": "半身裙",
+            "ar": "半身裙"
+          }
+        },
+        {
+          "subcid": 127684,
+          "subcname": "牛仔裤",
+          "translations": {
+            "en": "牛仔裤",
+            "es": "牛仔裤",
+            "ru": "牛仔裤",
+            "ar": "牛仔裤"
+          }
+        }
+      ]
+    },
+    {
+      "cid": 3,
+      "cname": "美妆",
+      "cpic": "https://img.alicdn.com/imgextra/i2/2053469401/O1CN01CGLh5g2JJhyzWsJN7_!!2053469401.png",
+      "translations": {
+        "en": "美妆",
+        "es": "美妆",
+        "ru": "美妆",
+        "ar": "美妆"
+      },
+      "subcategories": [
+        {
+          "subcid": 111754,
+          "subcname": "隔离防晒",
+          "translations": {
+            "en": "隔离防晒",
+            "es": "隔离防晒",
+            "ru": "隔离防晒",
+            "ar": "隔离防晒"
+          }
+        },
+        {
+          "subcid": 128002,
+          "subcname": "C位口红",
+          "translations": {
+            "en": "C位口红",
+            "es": "C位口红",
+            "ru": "C位口红",
+            "ar": "C位口红"
+          }
+        },
+        {
+          "subcid": 111746,
+          "subcname": "保湿水乳",
+          "translations": {
+            "en": "保湿水乳",
+            "es": "保湿水乳",
+            "ru": "保湿水乳",
+            "ar": "保湿水乳"
+          }
+        },
+        {
+          "subcid": 8052,
+          "subcname": "爆款面膜",
+          "translations": {
+            "en": "爆款面膜",
+            "es": "爆款面膜",
+            "ru": "|| Мобильная периферия | Мышь/клавиатура | Подставка | Поддувка | хлопок для кормления | Обувь для мужчин",
+            "ar": "爆款面膜"
+          }
+        },
+        {
+          "subcid": 111745,
+          "subcname": "美白套装",
+          "translations": {
+            "en": "美白套装",
+            "es": "Zapatos de mujer",
+            "ru": "美白套装",
+            "ar": "美白套装"
+          }
+        },
+        {
+          "subcid": 111750,
+          "subcname": "彩妆香氛",
+          "translations": {
+            "en": "彩妆香氛",
+            "es": "Zapatos casuales",
+            "ru": "Тканные туфли | Весенние и летние холодные тапочки",
+            "ar": "彩妆香氛"
+          }
+        },
+        {
+          "subcid": 111752,
+          "subcname": "美妆工具",
+          "translations": {
+            "en": "美妆工具",
+            "es": "Zapatos de hombre",
+            "ru": "|| Мужская одежда с короткими рукавами/футболка",
+            "ar": "美妆工具"
+          }
+        },
+        {
+          "subcid": 117946,
+          "subcname": "眼部护理",
+          "translations": {
+            "en": "眼部护理",
+            "es": "Zapatos de lona",
+            "ru": "眼部护理",
+            "ar": "眼部护理"
+          }
+        },
+        {
+          "subcid": 111749,
+          "subcname": "卸妆洁面",
+          "translations": {
+            "en": "卸妆洁面",
+            "es": "Sandalias y zapatillas de primavera y verano",
+            "ru": "卸妆洁面",
+            "ar": "卸妆洁面"
+          }
+        },
+        {
+          "subcid": 111748,
+          "subcname": "熬夜精华",
+          "translations": {
+            "en": "熬夜精华",
+            "es": "Ropa de hombre",
+            "ru": "熬夜精华",
+            "ar": "熬夜精华"
+          }
+        },
+        {
+          "subcid": 111751,
+          "subcname": "身体护理",
+          "translations": {
+            "en": "身体护理",
+            "es": "Manga corta/camiseta",
+            "ru": "身体护理",
+            "ar": "身体护理"
+          }
+        },
+        {
+          "subcid": 111753,
+          "subcname": "男士护肤",
+          "translations": {
+            "en": "男士护肤",
+            "es": "| Pantalones casuales",
+            "ru": "男士护肤",
+            "ar": "男士护肤"
+          }
+        }
+      ]
+    },
+    {
+      "cid": 8,
+      "cname": "数码家电",
+      "cpic": "https://img.alicdn.com/imgextra/i3/2053469401/O1CN01VJj85i2JJhyxOJiE0_!!2053469401.png",
+      "translations": {
+        "en": "数码家电",
+        "es": "数码家电",
+        "ru": "数码家电",
+        "ar": "数码家电"
+      },
+      "subcategories": [
+        {
+          "subcid": 127393,
+          "subcname": "清凉风扇",
+          "translations": {
+            "en": "清凉风扇",
+            "es": "清凉风扇",
+            "ru": "清凉风扇",
+            "ar": "清凉风扇"
+          }
+        },
+        {
+          "subcid": 113822,
+          "subcname": "耳机",
+          "translations": {
+            "en": "耳机",
+            "es": "| Ropa interior | Ropa interior | Ropa interior | Ropa interior | Ropa interior | Ropa interior | Ropa interior de mujer | | Ropa interior | Ropa de casa",
+            "ru": "| Подвесной свитер | Подвески | Подвески | Мужское поставки",
+            "ar": "耳机"
+          }
+        },
+        {
+          "subcid": 8570,
+          "subcname": "手机壳/膜",
+          "translations": {
+            "en": "手机壳/膜",
+            "es": "手机壳/膜",
+            "ru": "| Питание и пища",
+            "ar": "手机壳/膜"
+          }
+        },
+        {
+          "subcid": 86376,
+          "subcname": "厨房家电",
+          "translations": {
+            "en": "厨房家电",
+            "es": "Ropa interior | Ropa interior | suministros",
+            "ru": "厨房家电",
+            "ar": "厨房家电"
+          }
+        },
+        {
+          "subcid": 86371,
+          "subcname": "充电宝",
+          "translations": {
+            "en": "充电宝",
+            "es": "Suplementos nutricionales",
+            "ru": "| Товары для беременных",
+            "ar": "充电宝"
+          }
+        },
+        {
+          "subcid": 90628,
+          "subcname": "电脑外设  ",
+          "translations": {
+            "en": "电脑外设  ",
+            "es": "| Leche en polvo para bebés",
+            "ru": "| Товары для подгузников",
+            "ar": "电脑外设  "
+          }
+        },
+        {
+          "subcid": 86375,
+          "subcname": "鼠标/键盘",
+          "translations": {
+            "en": "鼠标/键盘",
+            "es": "Suministros para madres embarazadas",
+            "ru": "|| Детская одежда для раннего обучения",
+            "ar": "鼠标/键盘"
+          }
+        },
+        {
+          "subcid": 113823,
+          "subcname": "数据线",
+          "translations": {
+            "en": "数据线",
+            "es": "Toallitas húmedas para pañales",
+            "ru": "数据线",
+            "ar": "数据线"
+          }
+        },
+        {
+          "subcid": 86377,
+          "subcname": "日用小家电",
+          "translations": {
+            "en": "日用小家电",
+            "es": "Ropa para niños de moda",
+            "ru": "日用小家电",
+            "ar": "日用小家电"
+          }
+        },
+        {
+          "subcid": 90627,
+          "subcname": "剃须刀",
+          "translations": {
+            "en": "剃须刀",
+            "es": "| Educación temprana y rompecabezas",
+            "ru": "剃须刀",
+            "ar": "剃须刀"
+          }
+        },
+        {
+          "subcid": 111762,
+          "subcname": "手机支架",
+          "translations": {
+            "en": "手机支架",
+            "es": "| Productos de baño",
+            "ru": "手机支架",
+            "ar": "手机支架"
+          }
+        },
+        {
+          "subcid": 113824,
+          "subcname": "电吹风",
+          "translations": {
+            "en": "电吹风",
+            "es": "| Materiales de construcción básicos",
+            "ru": "电吹风",
+            "ar": "电吹风"
+          }
+        }
+      ]
+    },
+    {
+      "cid": 5,
+      "cname": "鞋品",
+      "cpic": "https://img.alicdn.com/imgextra/i3/2053469401/O1CN01VxrTf32JJi4iTobxT_!!2053469401.png",
+      "translations": {
+        "en": "鞋品",
+        "es": "鞋品",
+        "ru": "鞋品",
+        "ar": "鞋品"
+      },
+      "subcategories": [
+        {
+          "subcid": 127246,
+          "subcname": "凉鞋",
+          "translations": {
+            "en": "凉鞋",
+            "es": "Muebles sencillos",
+            "ru": "凉鞋",
+            "ar": "凉鞋"
+          }
+        },
+        {
+          "subcid": 113827,
+          "subcname": "女士单鞋",
+          "translations": {
+            "en": "女士单鞋",
+            "es": "女士单鞋",
+            "ru": "女士单鞋",
+            "ar": "女士单鞋"
+          }
+        },
+        {
+          "subcid": 113825,
+          "subcname": "小白鞋",
+          "translations": {
+            "en": "小白鞋",
+            "es": "小白鞋",
+            "ru": "Специальное постельное белье | Мебель | Индевелопмент | Инделения | сумки для письма",
+            "ar": "小白鞋"
+          }
+        },
+        {
+          "subcid": 127245,
+          "subcname": "运动鞋",
+          "translations": {
+            "en": "运动鞋",
+            "es": "运动鞋",
+            "ru": "运动鞋",
+            "ar": "运动鞋"
+          }
+        },
+        {
+          "subcid": 113826,
+          "subcname": "休闲鞋",
+          "translations": {
+            "en": "休闲鞋",
+            "es": "休闲鞋",
+            "ru": "休闲鞋",
+            "ar": "休闲鞋"
+          }
+        },
+        {
+          "subcid": 125296,
+          "subcname": "男士鞋品",
+          "translations": {
+            "en": "男士鞋品",
+            "es": "| Artículos de cocina | herramientas de escritura",
+            "ru": "男士鞋品",
+            "ar": "男士鞋品"
+          }
+        },
+        {
+          "subcid": 89955,
+          "subcname": "帆布鞋",
+          "translations": {
+            "en": "帆布鞋",
+            "es": "Libros, audio y video",
+            "ru": "| Офисные канцелярские товары",
+            "ar": "帆布鞋"
+          }
+        },
+        {
+          "subcid": 127249,
+          "subcname": "春夏凉拖鞋",
+          "translations": {
+            "en": "春夏凉拖鞋",
+            "es": "| Accesorios para automóviles y productos para automóviles",
+            "ru": "|| Обязательные экзаменационные материалы",
+            "ar": "春夏凉拖鞋"
+          }
+        }
+      ]
+    },
+    {
+      "cid": 9,
+      "cname": "男装",
+      "cpic": "https://img.alicdn.com/imgextra/i2/2053469401/O1CN01c0aWPH2JJi4ZVHiGf_!!2053469401.png",
+      "translations": {
+        "en": "男装",
+        "es": "Papelería de oficina",
+        "ru": "男装",
+        "ar": "男装"
+      },
+      "subcategories": [
+        {
+          "subcid": 127537,
+          "subcname": "短袖/T恤",
+          "translations": {
+            "en": "短袖/T恤",
+            "es": "Necesario para exámenes",
+            "ru": "Художественные подарки",
+            "ar": "短袖/T恤"
+          }
+        },
+        {
+          "subcid": 124283,
+          "subcname": "休闲裤",
+          "translations": {
+            "en": "休闲裤",
+            "es": "Herramientas de pintura y materiales de pintura",
+            "ru": "休闲裤",
+            "ar": "休闲裤"
+          }
+        },
+        {
+          "subcid": 124278,
+          "subcname": "衬衫",
+          "translations": {
+            "en": "衬衫",
+            "es": "| Regalos de arte",
+            "ru": "| Автомобильная техника",
+            "ar": "衬衫"
+          }
+        },
+        {
+          "subcid": 127538,
+          "subcname": " POLO衫",
+          "translations": {
+            "en": " POLO衫",
+            "es": "| Aparatos de automóvil",
+            "ru": " POLO衫",
+            "ar": " POLO衫"
+          }
+        },
+        {
+          "subcid": 124284,
+          "subcname": "工装裤",
+          "translations": {
+            "en": "工装裤",
+            "es": "工装裤",
+            "ru": "工装裤",
+            "ar": "工装裤"
+          }
+        },
+        {
+          "subcid": 124281,
+          "subcname": "牛仔裤",
+          "translations": {
+            "en": "牛仔裤",
+            "es": "|| Otros accesorios",
+            "ru": "牛仔裤",
+            "ar": "牛仔裤"
+          }
+        },
+        {
+          "subcid": 124282,
+          "subcname": "套装",
+          "translations": {
+            "en": "套装",
+            "es": "套装",
+            "ru": "套装",
+            "ar": "套装"
+          }
+        },
+        {
+          "subcid": 125864,
+          "subcname": "薄款卫衣",
+          "translations": {
+            "en": "薄款卫衣",
+            "es": "薄款卫衣",
+            "ru": "薄款卫衣",
+            "ar": "薄款卫衣"
+          }
+        }
+      ]
+    },
+    {
+      "cid": 10,
+      "cname": "内衣",
+      "cpic": "https://img.alicdn.com/imgextra/i4/2053469401/O1CN01BqMTPD2JJhyzlIlEf_!!2053469401.png",
+      "translations": {
+        "en": "内衣",
+        "es": "| Bolsos de hombro | Bolsos de viaje",
+        "ru": "内衣",
+        "ar": "内衣"
+      },
+      "subcategories": [
+        {
+          "subcid": 7947,
+          "subcname": "性感文胸",
+          "translations": {
+            "en": "性感文胸",
+            "es": "性感文胸",
+            "ru": "| Обложки | Другие сумки | цепная сумка",
+            "ar": "性感文胸"
+          }
+        },
+        {
+          "subcid": 97115,
+          "subcname": "女士内裤",
+          "translations": {
+            "en": "女士内裤",
+            "es": "|",
+            "ru": "女士内裤",
+            "ar": "女士内裤"
+          }
+        },
+        {
+          "subcid": 117955,
+          "subcname": "家居服",
+          "translations": {
+            "en": "家居服",
+            "es": "Bolso de cadena",
+            "ru": "| Сумка на холсте | Сумка на холсте",
+            "ar": "家居服"
+          }
+        },
+        {
+          "subcid": 97114,
+          "subcname": "男士内裤",
+          "translations": {
+            "en": "男士内裤",
+            "es": "Bolso de mano",
+            "ru": "男士内裤",
+            "ar": "男士内裤"
+          }
+        },
+        {
+          "subcid": 117954,
+          "subcname": "纯棉睡衣",
+          "translations": {
+            "en": "纯棉睡衣",
+            "es": "Bolso de lona",
+            "ru": "|| Кошелек",
+            "ar": "纯棉睡衣"
+          }
+        },
+        {
+          "subcid": 117956,
+          "subcname": "美背吊带",
+          "translations": {
+            "en": "美背吊带",
+            "es": "Bolso de cuero",
+            "ru": "美背吊带",
+            "ar": "美背吊带"
+          }
+        },
+        {
+          "subcid": 122948,
+          "subcname": "隐形丝袜",
+          "translations": {
+            "en": "隐形丝袜",
+            "es": "Cartera",
+            "ru": "隐形丝袜",
+            "ar": "隐形丝袜"
+          }
+        }
+      ]
+    },
+    {
+      "cid": 2,
+      "cname": "母婴",
+      "cpic": "https://img.alicdn.com/imgextra/i1/2053469401/O1CN01Hz4Omt2JJhz3aY3y7_!!2053469401.png",
+      "translations": {
+        "en": "母婴",
+        "es": "Deportes al aire libre",
+        "ru": "母婴",
+        "ar": "母婴"
+      },
+      "subcategories": [
+        {
+          "subcid": 127841,
+          "subcname": "洗护用品",
+          "translations": {
+            "en": "洗护用品",
+            "es": "| Equipo de fitness",
+            "ru": "洗护用品",
+            "ar": "洗护用品"
+          }
+        },
+        {
+          "subcid": 127836,
+          "subcname": "喂养用品",
+          "translations": {
+            "en": "喂养用品",
+            "es": "Suministros de pesca",
+            "ru": "Принадлежности для рыбалки | Фитнес",
+            "ar": "喂养用品"
+          }
+        },
+        {
+          "subcid": 127839,
+          "subcname": "营养辅食 ",
+          "translations": {
+            "en": "营养辅食 ",
+            "es": "|| Suministros para fanáticos",
+            "ru": "|| Запасы для болельщиков | Аксессуары для бега",
+            "ar": "营养辅食 "
+          }
+        },
+        {
+          "subcid": 127838,
+          "subcname": "宝宝奶粉",
+          "translations": {
+            "en": "宝宝奶粉",
+            "es": "| Accesorios para correr",
+            "ru": "宝宝奶粉",
+            "ar": "宝宝奶粉"
+          }
+        },
+        {
+          "subcid": 127834,
+          "subcname": "孕妈用品 ",
+          "translations": {
+            "en": "孕妈用品 ",
+            "es": "| Equipo de yoga",
+            "ru": "Оборудование для йоги | Поход на природе",
+            "ar": "孕妈用品 "
+          }
+        },
+        {
+          "subcid": 127835,
+          "subcname": "尿裤湿巾",
+          "translations": {
+            "en": "尿裤湿巾",
+            "es": "|| Senderismo y montañismo",
+            "ru": "尿裤湿巾",
+            "ar": "尿裤湿巾"
+          }
+        },
+        {
+          "subcid": 8031,
+          "subcname": "潮流童装",
+          "translations": {
+            "en": "潮流童装",
+            "es": "| Equipo al aire libre",
+            "ru": "潮流童装",
+            "ar": "潮流童装"
+          }
+        },
+        {
+          "subcid": 127840,
+          "subcname": "早教益智 ",
+          "translations": {
+            "en": "早教益智 ",
+            "es": "早教益智 ",
+            "ru": "早教益智 ",
+            "ar": "早教益智 "
+          }
+        },
+        {
+          "subcid": 127842,
+          "subcname": "宝宝出行 ",
+          "translations": {
+            "en": "宝宝出行 ",
+            "es": "宝宝出行 ",
+            "ru": "宝宝出行 ",
+            "ar": "宝宝出行 "
+          }
+        },
+        {
+          "subcid": 117959,
+          "subcname": "儿童防护",
+          "translations": {
+            "en": "儿童防护",
+            "es": "儿童防护",
+            "ru": "儿童防护",
+            "ar": "儿童防护"
+          }
+        },
+        {
+          "subcid": 86356,
+          "subcname": "童鞋",
+          "translations": {
+            "en": "童鞋",
+            "es": "童鞋",
+            "ru": "童鞋",
+            "ar": "童鞋"
+          }
+        }
+      ]
+    },
+    {
+      "cid": 14,
+      "cname": "家装家纺",
+      "cpic": "https://img.alicdn.com/imgextra/i2/2053469401/O1CN01b7QRoZ2JJhz1JEGsu_!!2053469401.png",
+      "translations": {
+        "en": "家装家纺",
+        "es": "家装家纺",
+        "ru": "家装家纺",
+        "ar": "家装家纺"
+      },
+      "subcategories": [
+        {
+          "subcid": 117962,
+          "subcname": "床上用品",
+          "translations": {
+            "en": "床上用品",
+            "es": "床上用品",
+            "ru": "床上用品",
+            "ar": "床上用品"
+          }
+        },
+        {
+          "subcid": 117960,
+          "subcname": "简易家具",
+          "translations": {
+            "en": "简易家具",
+            "es": "简易家具",
+            "ru": "简易家具",
+            "ar": "简易家具"
+          }
+        },
+        {
+          "subcid": 117961,
+          "subcname": "居家布艺",
+          "translations": {
+            "en": "居家布艺",
+            "es": "居家布艺",
+            "ru": "居家布艺",
+            "ar": "居家布艺"
+          }
+        },
+        {
+          "subcid": 117963,
+          "subcname": "家装饰品",
+          "translations": {
+            "en": "家装饰品",
+            "es": "家装饰品",
+            "ru": "家装饰品",
+            "ar": "家装饰品"
+          }
+        },
+        {
+          "subcid": 117966,
+          "subcname": "卫浴用品",
+          "translations": {
+            "en": "卫浴用品",
+            "es": "卫浴用品",
+            "ru": "卫浴用品",
+            "ar": "卫浴用品"
+          }
+        },
+        {
+          "subcid": 117967,
+          "subcname": "厨房专用",
+          "translations": {
+            "en": "厨房专用",
+            "es": "厨房专用",
+            "ru": "厨房专用",
+            "ar": "厨房专用"
+          }
+        },
+        {
+          "subcid": 117964,
+          "subcname": "基础建材",
+          "translations": {
+            "en": "基础建材",
+            "es": "基础建材",
+            "ru": "基础建材",
+            "ar": "基础建材"
+          }
+        },
+        {
+          "subcid": 117965,
+          "subcname": "五金/电工",
+          "translations": {
+            "en": "五金/电工",
+            "es": "五金/电工",
+            "ru": "五金/电工",
+            "ar": "五金/电工"
+          }
+        }
+      ]
+    },
+    {
+      "cid": 7,
+      "cname": "文娱车品",
+      "cpic": "https://img.alicdn.com/imgextra/i2/2053469401/O1CN01dUQnIU2JJhz17fwhe_!!2053469401.png",
+      "translations": {
+        "en": "文娱车品",
+        "es": "文娱车品",
+        "ru": "文娱车品",
+        "ar": "文娱车品"
+      },
+      "subcategories": [
+        {
+          "subcid": 90632,
+          "subcname": "书写工具",
+          "translations": {
+            "en": "书写工具",
+            "es": "书写工具",
+            "ru": "书写工具",
+            "ar": "书写工具"
+          }
+        },
+        {
+          "subcid": 8472,
+          "subcname": "图书音像",
+          "translations": {
+            "en": "图书音像",
+            "es": "图书音像",
+            "ru": "图书音像",
+            "ar": "图书音像"
+          }
+        },
+        {
+          "subcid": 8465,
+          "subcname": "车饰车品",
+          "translations": {
+            "en": "车饰车品",
+            "es": "车饰车品",
+            "ru": "车饰车品",
+            "ar": "车饰车品"
+          }
+        },
+        {
+          "subcid": 8451,
+          "subcname": "办公文具",
+          "translations": {
+            "en": "办公文具",
+            "es": "办公文具",
+            "ru": "办公文具",
+            "ar": "办公文具"
+          }
+        },
+        {
+          "subcid": 90631,
+          "subcname": "考试必备  ",
+          "translations": {
+            "en": "考试必备  ",
+            "es": "考试必备  ",
+            "ru": "考试必备  ",
+            "ar": "考试必备  "
+          }
+        },
+        {
+          "subcid": 86395,
+          "subcname": "画具画材 ",
+          "translations": {
+            "en": "画具画材 ",
+            "es": "画具画材 ",
+            "ru": "画具画材 ",
+            "ar": "画具画材 "
+          }
+        },
+        {
+          "subcid": 8486,
+          "subcname": "艺术礼品",
+          "translations": {
+            "en": "艺术礼品",
+            "es": "艺术礼品",
+            "ru": "艺术礼品",
+            "ar": "艺术礼品"
+          }
+        },
+        {
+          "subcid": 8458,
+          "subcname": "车载电器",
+          "translations": {
+            "en": "车载电器",
+            "es": "车载电器",
+            "ru": "车载电器",
+            "ar": "车载电器"
+          }
+        }
+      ]
+    },
+    {
+      "cid": 12,
+      "cname": "配饰",
+      "cpic": "https://img.alicdn.com/imgextra/i3/2053469401/O1CN01eGxbf02JJhyxedUyA_!!2053469401.png",
+      "translations": {
+        "en": "配饰",
+        "es": "配饰",
+        "ru": "配饰",
+        "ar": "配饰"
+      },
+      "subcategories": [
+        {
+          "subcid": 117968,
+          "subcname": "耳饰/颈链",
+          "translations": {
+            "en": "耳饰/颈链",
+            "es": "耳饰/颈链",
+            "ru": "耳饰/颈链",
+            "ar": "耳饰/颈链"
+          }
+        },
+        {
+          "subcid": 117969,
+          "subcname": "戒指/手链",
+          "translations": {
+            "en": "戒指/手链",
+            "es": "戒指/手链",
+            "ru": "戒指/手链",
+            "ar": "戒指/手链"
+          }
+        },
+        {
+          "subcid": 117970,
+          "subcname": "防晒帽",
+          "translations": {
+            "en": "防晒帽",
+            "es": "防晒帽",
+            "ru": "防晒帽",
+            "ar": "防晒帽"
+          }
+        },
+        {
+          "subcid": 86407,
+          "subcname": "手表",
+          "translations": {
+            "en": "手表",
+            "es": "手表",
+            "ru": "手表",
+            "ar": "手表"
+          }
+        },
+        {
+          "subcid": 8360,
+          "subcname": "精美发饰",
+          "translations": {
+            "en": "精美发饰",
+            "es": "精美发饰",
+            "ru": "精美发饰",
+            "ar": "精美发饰"
+          }
+        },
+        {
+          "subcid": 117972,
+          "subcname": "眼镜/墨镜",
+          "translations": {
+            "en": "眼镜/墨镜",
+            "es": "眼镜/墨镜",
+            "ru": "眼镜/墨镜",
+            "ar": "眼镜/墨镜"
+          }
+        },
+        {
+          "subcid": 117355,
+          "subcname": "皮带/腰带",
+          "translations": {
+            "en": "皮带/腰带",
+            "es": "皮带/腰带",
+            "ru": "皮带/腰带",
+            "ar": "皮带/腰带"
+          }
+        },
+        {
+          "subcid": 117971,
+          "subcname": "其他饰品",
+          "translations": {
+            "en": "其他饰品",
+            "es": "其他饰品",
+            "ru": "其他饰品",
+            "ar": "其他饰品"
+          }
+        }
+      ]
+    },
+    {
+      "cid": 11,
+      "cname": "箱包",
+      "cpic": "https://img.alicdn.com/imgextra/i1/2053469401/O1CN014aXsNM2JJhyzlL2YQ_!!2053469401.png",
+      "translations": {
+        "en": "箱包",
+        "es": "箱包",
+        "ru": "箱包",
+        "ar": "箱包"
+      },
+      "subcategories": [
+        {
+          "subcid": 113831,
+          "subcname": "斜挎包  ",
+          "translations": {
+            "en": "斜挎包  ",
+            "es": "斜挎包  ",
+            "ru": "斜挎包  ",
+            "ar": "斜挎包  "
+          }
+        },
+        {
+          "subcid": 8304,
+          "subcname": "旅行箱包",
+          "translations": {
+            "en": "旅行箱包",
+            "es": "旅行箱包",
+            "ru": "旅行箱包",
+            "ar": "旅行箱包"
+          }
+        },
+        {
+          "subcid": 8332,
+          "subcname": "双肩包",
+          "translations": {
+            "en": "双肩包",
+            "es": "双肩包",
+            "ru": "双肩包",
+            "ar": "双肩包"
+          }
+        },
+        {
+          "subcid": 105918,
+          "subcname": "链条包",
+          "translations": {
+            "en": "链条包",
+            "es": "链条包",
+            "ru": "链条包",
+            "ar": "链条包"
+          }
+        },
+        {
+          "subcid": 113832,
+          "subcname": "手提包",
+          "translations": {
+            "en": "手提包",
+            "es": "手提包",
+            "ru": "手提包",
+            "ar": "手提包"
+          }
+        },
+        {
+          "subcid": 113524,
+          "subcname": "帆布包",
+          "translations": {
+            "en": "帆布包",
+            "es": "帆布包",
+            "ru": "帆布包",
+            "ar": "帆布包"
+          }
+        },
+        {
+          "subcid": 86699,
+          "subcname": "真皮包",
+          "translations": {
+            "en": "真皮包",
+            "es": "真皮包",
+            "ru": "真皮包",
+            "ar": "真皮包"
+          }
+        },
+        {
+          "subcid": 8297,
+          "subcname": "钱包",
+          "translations": {
+            "en": "钱包",
+            "es": "钱包",
+            "ru": "钱包",
+            "ar": "钱包"
+          }
+        }
+      ]
+    },
+    {
+      "cid": 13,
+      "cname": "户外运动",
+      "cpic": "https://img.alicdn.com/imgextra/i2/2053469401/O1CN01oTRh752JJhyxed61t_!!2053469401.png",
+      "translations": {
+        "en": "户外运动",
+        "es": "户外运动",
+        "ru": "户外运动",
+        "ar": "户外运动"
+      },
+      "subcategories": [
+        {
+          "subcid": 8514,
+          "subcname": "健身装备",
+          "translations": {
+            "en": "健身装备",
+            "es": "健身装备",
+            "ru": "健身装备",
+            "ar": "健身装备"
+          }
+        },
+        {
+          "subcid": 110666,
+          "subcname": "垂钓用品",
+          "translations": {
+            "en": "垂钓用品",
+            "es": "垂钓用品",
+            "ru": "垂钓用品",
+            "ar": "垂钓用品"
+          }
+        },
+        {
+          "subcid": 8528,
+          "subcname": "健身服装 ",
+          "translations": {
+            "en": "健身服装 ",
+            "es": "健身服装 ",
+            "ru": "健身服装 ",
+            "ar": "健身服装 "
+          }
+        },
+        {
+          "subcid": 89515,
+          "subcname": "球迷用品",
+          "translations": {
+            "en": "球迷用品",
+            "es": "球迷用品",
+            "ru": "球迷用品",
+            "ar": "球迷用品"
+          }
+        },
+        {
+          "subcid": 115002,
+          "subcname": "跑步配件",
+          "translations": {
+            "en": "跑步配件",
+            "es": "跑步配件",
+            "ru": "跑步配件",
+            "ar": "跑步配件"
+          }
+        },
+        {
+          "subcid": 97117,
+          "subcname": "瑜伽器材",
+          "translations": {
+            "en": "瑜伽器材",
+            "es": "瑜伽器材",
+            "ru": "瑜伽器材",
+            "ar": "瑜伽器材"
+          }
+        },
+        {
+          "subcid": 110667,
+          "subcname": "徒步登山",
+          "translations": {
+            "en": "徒步登山",
+            "es": "徒步登山",
+            "ru": "徒步登山",
+            "ar": "徒步登山"
+          }
+        },
+        {
+          "subcid": 86700,
+          "subcname": "户外装备",
+          "translations": {
+            "en": "户外装备",
+            "es": "户外装备",
+            "ru": "户外装备",
+            "ar": "户外装备"
           }
         }
       ]
