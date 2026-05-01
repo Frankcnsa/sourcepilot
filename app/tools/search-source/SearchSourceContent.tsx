@@ -1,9 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Search, ShoppingCart } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/context/LanguageContext';
+import { translateText } from '@/lib/aliyun-translate';
+import { getSupabaseBrowserClient } from '@/lib/supabase';
+import { useTranslation } from '@/hooks/useTranslation';
+import ProductModal from '@/components/ProductModal';
 
 interface Product {
   id: string;
@@ -14,16 +18,12 @@ interface Product {
   shop: string;
   sales: string;
   yuanjia?: number;
-  jiage?: number;
-  marketPrice?: number;
   couponInfo?: string;
   link?: string;
-  sellerId?: string;
-  salesNum?: number;
-  renqi?: number;
+  [key: string]: any; // 允许全量字段
 }
 
-// 统一字段处理函数：把不同接口的字段名映射到统一字段
+// 统一字段处理函数（适配后端返回的中文全量数据）
 function normalizeProduct(item: any): Product {
   return {
     id: item.goodsId || item.goodsSign || item.id || '',
@@ -32,75 +32,194 @@ function normalizeProduct(item: any): Product {
     actualPrice: item.actualPrice || item.jiage || 0,
     pic: item.pic || item.mainPic || item.pictUrl || '',
     shop: item.shopName || item.shop || item.sellerId || '',
-    sales: '',
+    sales: item.monthSales || item.sales || '',
     yuanjia: item.yuanjia || item.originalPrice || item.actualPrice || 0,
     couponInfo: item.couponInfo || (item.couponPrice ? `减${item.couponPrice}元` : ''),
     link: item.itemLink || item.link || '',
-    sellerId: item.sellerId || item.shopId || '',
-    salesNum: item.salesNum || item.monthSales || item.xiaoliang || 0,
-    renqi: item.renqi || 0
+    // 保留其他全量字段
+    ...item
   };
 }
 
 export default function SearchSourceContent() {
   const router = useRouter();
-  const { lang, setLang } = useLanguage();
+  const { lang } = useLanguage();
   const [query, setQuery] = useState('');
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
+  
+  // 栏目数据
   const [categories, setCategories] = useState<any[]>([]);
   const [realTime, setRealTime] = useState<Product[]>([]);
-  const [nineNine, setNineNine] = useState<Product[]>([]);
-  const [highCommission, setHighCommission] = useState<Product[]>([]);
   const [dailyHot, setDailyHot] = useState<Product[]>([]);
+  const [highCommission, setHighCommission] = useState<Product[]>([]);
   const [guessLike, setGuessLike] = useState<Product[]>([]);
+  
+  // 加载状态
   const [realTimeLoading, setRealTimeLoading] = useState(true);
-  const [nineNineLoading, setNineNineLoading] = useState(true);
-  const [highCommissionLoading, setHighCommissionLoading] = useState(true);
   const [dailyHotLoading, setDailyHotLoading] = useState(true);
+  const [highCommissionLoading, setHighCommissionLoading] = useState(true);
   const [guessLikeLoading, setGuessLikeLoading] = useState(true);
   const [guessLikePage, setGuessLikePage] = useState(1);
   const [guessLikeHasMore, setGuessLikeHasMore] = useState(true);
   const [guessLikeLoadingMore, setGuessLikeLoadingMore] = useState(false);
+  
+  // UI 状态
   const [cartCount, setCartCount] = useState(0);
-  const [pasteContent, setPasteContent] = useState('');
-  const [pasteLoading, setPasteLoading] = useState(false);
-  const [pasteResult, setPasteResult] = useState<any>(null);
   const [activeCategory, setActiveCategory] = useState<number|null>(null);
   const [showSubMenu, setShowSubMenu] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const [selectedProductId, setSelectedProductId] = useState<string|null>(null);
+
+  // 获取当前用户登录状态
+  useEffect(() => {
+    const supabase = getSupabaseBrowserClient();
+    supabase.auth.getUser().then(({ data }: any) => setUser(data.user));
+  }, []);
 
   // 文本（多语言）
   const text: any = {
-    zh: { searchPlaceholder: '搜索产品...', realTime: '实时热销榜', nineNine: '9.9包邮', highCommission: '高佣精选', dailyHot: '每日爆品', guessLike: '猜你喜欢', search: '搜索', loading: '加载中...', noData: '暂无数据', addToCart: '加入清单', sales: '已售', originalPrice: '原价', save: '节省', viewMore: '查看更多', pasteHint: '粘贴淘口令或链接', pasteButton: '识别', cart: '清单' },
-    en: { searchPlaceholder: 'Search products...', realTime: 'Hot Sales', nineNine: '9.9 Shipping', highCommission: 'High Commission', dailyHot: 'Daily Hot', guessLike: 'Guess You Like', search: 'Search', loading: 'Loading...', noData: 'No data', addToCart: 'Add to List', sales: 'sold', originalPrice: 'Original', save: 'Save', viewMore: 'View More', pasteHint: 'Paste Taobao code or link', pasteButton: 'Parse', cart: 'Cart' },
-    ru: { searchPlaceholder: 'Поиск...', realTime: 'Горячие продажи', nineNine: 'Доставка 9.9', highCommission: 'Высокая комиссия', dailyHot: 'Ежедневный хит', guessLike: 'Вам может понравиться', search: 'Поиск', loading: 'Загрузка...', noData: 'Нет данных', addToCart: 'Добавить в список', sales: 'продано', originalPrice: 'Оригинальная цена', save: 'Экономия', viewMore: 'Посмотреть ещё', pasteHint: 'Вставьте код или ссылку', pasteButton: 'Распознать', cart: 'Корзина' },
-    es: { searchPlaceholder: 'Buscar...', realTime: 'Más Vendidos', nineNine: 'Envío 9.9', highCommission: 'Alta Comisión', dailyHot: 'Popular Hoy', guessLike: 'Quizás te guste', search: 'Buscar', loading: 'Cargando...', noData: 'Sin datos', addToCart: 'Añadir a la lista', sales: 'vendidos', originalPrice: 'Precio original', save: 'Ahorra', viewMore: 'Ver más', pasteHint: 'Pega código o enlace', pasteButton: 'Analizar', cart: 'Carrito' },
-    ar: { searchPlaceholder: 'بحث...', realTime: 'الأكثر مبيعاً', nineNine: 'شحن 9.9', highCommission: 'عمولة عالية', dailyHot: 'الأكثر شعبية', guessLike: 'قد يعجبك', search: 'بحث', loading: 'جاري التحميل...', noData: 'لا توجد بيانات', addToCart: 'أضف إلى القائمة', sales: 'مباع', originalPrice: 'السعر الأصلي', save: 'وفر', viewMore: 'عرض المزيد', pasteHint: 'الصق الكود أو الرابط', pasteButton: 'تحليل', cart: 'السلة' }
+    zh: { 
+      searchPlaceholder: '搜索产品...', 
+      realTime: '实时热销榜', 
+      dailyHot: '每日爆品', 
+      highCommission: '高佣精选',
+      guessLike: '猜你喜欢', 
+      search: '搜索', 
+      loading: '加载中...', 
+      noData: '暂无数据', 
+      viewMore: '查看更多' 
+    },
+    en: { 
+      searchPlaceholder: 'Search products...', 
+      realTime: 'Hot Sales', 
+      dailyHot: 'Daily Hot', 
+      highCommission: 'High Commission',
+      guessLike: 'Guess You Like', 
+      search: 'Search', 
+      loading: 'Loading...', 
+      noData: 'No data', 
+      viewMore: 'View More' 
+    },
+    ru: { 
+      searchPlaceholder: 'Поиск...', 
+      realTime: 'Горячие продажи', 
+      dailyHot: 'Ежедневный хит', 
+      highCommission: 'Высокая комиссия',
+      guessLike: 'Вам может понравиться', 
+      search: 'Поиск', 
+      loading: 'Загрузка...', 
+      noData: 'Нет данных', 
+      viewMore: 'Посмотреть ещё' 
+    },
+    es: { 
+      searchPlaceholder: 'Buscar...', 
+      realTime: 'Más Vendidos', 
+      dailyHot: 'Popular Hoy', 
+      highCommission: 'Alta Comisión',
+      guessLike: 'Quizás te guste', 
+      search: 'Buscar', 
+      loading: 'Cargando...', 
+      noData: 'Sin datos', 
+      viewMore: 'Ver más' 
+    },
+    ar: { 
+      searchPlaceholder: 'بحث...', 
+      realTime: 'الأكثر مبيعاً', 
+      dailyHot: 'الأكثر شعبية', 
+      highCommission: 'عمولة عالية',
+      guessLike: 'قد يعجبك', 
+      search: 'بحث', 
+      loading: 'جاري التحميل...', 
+      noData: 'لا توجد بيانات', 
+      viewMore: 'عرض المزيد' 
+    }
   }[lang] || {
-    searchPlaceholder: 'Search...', realTime: 'Hot Sales', nineNine: '9.9 Shipping', highCommission: 'High Commission', dailyHot: 'Daily Hot', guessLike: 'Guess You Like', search: 'Search', loading: 'Loading...', noData: 'No data', addToCart: 'Add to List', sales: 'sold', originalPrice: 'Original', save: 'Save', viewMore: 'View More', pasteHint: 'Paste Taobao code or link', pasteButton: 'Parse', cart: 'Cart'
+    searchPlaceholder: 'Search...', 
+    realTime: 'Hot Sales', 
+    dailyHot: 'Daily Hot', 
+    highCommission: 'High Commission',
+    guessLike: 'Guess You Like', 
+    search: 'Search', 
+    loading: 'Loading...', 
+    noData: 'No data', 
+    viewMore: 'View More'
   };
 
-  // 加载分类
+  // 翻译栏目数据（使用 useTranslation Hook）
+  const realTimeWithTranslation = useTranslation(realTime, lang, ['dtitle', 'shop']);
+  const dailyHotWithTranslation = useTranslation(dailyHot, lang, ['dtitle', 'shop']);
+  const highCommissionWithTranslation = useTranslation(highCommission, lang, ['dtitle', 'shop']);
+  const guessLikeWithTranslation = useTranslation(guessLike, lang, ['dtitle', 'shop']);
+  
+  // 搜索结果翻译
+  const productsWithTranslation = useTranslation(products, lang, ['dtitle', 'shop']);
+
+  // 加载分类（从API获取完整数据，然后合并本地翻译）
   useEffect(() => {
-    fetch('/api/proxy', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'super-categories' })
-    })
-      .then(r => r.json())
-      .then(data => {
-        if (data.success && Array.isArray(data.data)) {
-          setCategories(data.data);
-        } else if (data.success && data.data?.categoryRespVOS) {
-          setCategories(data.data.categoryRespVOS);
+    const loadCategories = async () => {
+      try {
+        // 1. 先尝试加载本地翻译数据
+        const localRes = await fetch('/data/categories-translations.json');
+        const localData = await localRes.json();
+        const translationMap = new Map();
+        
+        if (localData.categories) {
+          localData.categories.forEach((cat: any) => {
+            translationMap.set(cat.cid, {
+              translations: cat.translations,
+              subcategories: cat.subcategories?.map((sub: any) => ({
+                subcid: sub.subcid,
+                subcname: sub.subcname,
+                translations: sub.translations
+              }))
+            });
+          });
         }
-      })
-      .catch(() => {});
+        
+        // 2. 从API获取完整分类（含图片）
+        const apiRes = await fetch('/api/proxy', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'super-categories' })
+        });
+        const apiData = await apiRes.json();
+        
+        let apiCategories = [];
+        if (apiData.success && Array.isArray(apiData.data)) {
+          apiCategories = apiData.data;
+        } else if (apiData.success && apiData.data?.categoryRespVOS) {
+          apiCategories = apiData.data.categoryRespVOS;
+        }
+        
+        // 3. 合并：API数据（含图片）+ 本地翻译
+        const mergedCategories = apiCategories.map((cat: any) => {
+          const translation = translationMap.get(cat.cid);
+          return {
+            ...cat,
+            translations: translation?.translations || null,
+            subcategories: cat.subcategories?.map((sub: any) => {
+              const subTranslation = translation?.subcategories?.find((s: any) => s.subcid === sub.subcid);
+              return {
+                ...sub,
+                translations: subTranslation?.translations || null
+              };
+            }) || null
+          };
+        });
+        
+        setCategories(mergedCategories);
+      } catch (err) {
+        console.error('[Categories] 加载失败:', err);
+      }
+    };
+    
+    loadCategories();
   }, []);
 
-  // 加载栏目数据
+  // 加载栏目数据（后端返回全量中文，前端负责翻译）
   useEffect(() => {
-    const timestamp = Date.now(); // 时间戳，防止缓存
+    const timestamp = Date.now();
 
     // 实时热销榜
     setRealTimeLoading(true);
@@ -120,24 +239,23 @@ export default function SearchSourceContent() {
       })
       .catch(() => setRealTimeLoading(false));
 
-    // 9.9包邮
-    setNineNineLoading(true);
+    // 每日爆品
+    setDailyHotLoading(true);
     fetch('/api/proxy', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'nine-nine', pageSize: 10, page: 1 })
+      body: JSON.stringify({ action: 'daily-hot', pageSize: 10, page: 1, _t: timestamp })
     })
       .then(r => r.json())
       .then(data => {
         if (data.success && data.data) {
-          // nine-nine 接口返回的是分类，需要从中提取商品或者换接口
-          // 暂时先用空数组，后面修复
-          const items: any[] = [];
-          setNineNine(items);
+          const rawItems = data.data.list || data.data.data || data.data || [];
+          const items = rawItems.map((item: any) => normalizeProduct(item));
+          setDailyHot(items.slice(0, 10));
         }
-        setNineNineLoading(false);
+        setDailyHotLoading(false);
       })
-      .catch(() => setNineNineLoading(false));
+      .catch(() => setDailyHotLoading(false));
 
     // 高佣精选
     setHighCommissionLoading(true);
@@ -157,25 +275,7 @@ export default function SearchSourceContent() {
       })
       .catch(() => setHighCommissionLoading(false));
 
-    // 每日爆品
-    setDailyHotLoading(true);
-    fetch('/api/proxy', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'daily-hot', pageSize: 10, page: 1, _t: timestamp })
-    })
-      .then(r => r.json())
-      .then(data => {
-        if (data.success && data.data) {
-          const rawItems = data.data.list || data.data.data || data.data || [];
-          const items = rawItems.map((item: any) => normalizeProduct(item));
-          setDailyHot(items.slice(0, 10));
-        }
-        setDailyHotLoading(false);
-      })
-      .catch(() => setDailyHotLoading(false));
-
-    // 猜你喜欢（初始加载）
+    // 猜你喜欢
     setGuessLikeLoading(true);
     setGuessLikePage(1);
     fetch('/api/proxy', {
@@ -196,23 +296,31 @@ export default function SearchSourceContent() {
       .catch(() => setGuessLikeLoading(false));
   }, [lang]);
 
-  // 搜索
+  // 搜索（关键：搜索词先翻成中文再给大淘客API）
   const handleSearch = async (searchQuery?: string) => {
     const q = searchQuery || query;
     if (!q.trim()) return;
     setLoading(true);
     try {
+      // ❗️ 关键：无论什么语言，先翻成中文再给API
+      let searchTerm = q;
+      if (lang !== 'zh') {
+        try {
+          searchTerm = await translateText(q, lang, 'zh');
+        } catch (e) {
+          console.warn('翻译查询词失败，使用原文:', e);
+        }
+      }
       const res = await fetch('/api/proxy', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'search', query: q, pageSize: 20, page: 1 })
+        body: JSON.stringify({ action: 'search', query: searchTerm, pageSize: 20, page: 1 })
       });
       const data = await res.json();
       if (data.success && data.data) {
         const rawItems = data.data.list || data.data.data || data.data || [];
         const items = rawItems.map((item: any) => normalizeProduct(item));
         setProducts(items.slice(0, 20));
-        // 搜索后滚动到页面顶部，确保能看到搜索结果
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     } catch (e) {
@@ -250,56 +358,50 @@ export default function SearchSourceContent() {
     }
   };
 
-  // 剪贴板识别
-  const handlePaste = async () => {
-    if (!pasteContent.trim()) return;
-    setPasteLoading(true);
-    try {
-      const res = await fetch('/api/proxy', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'parse-content', content: pasteContent })
-      });
-      const data = await res.json();
-      setPasteResult(data);
-    } catch (e) {
-      console.error('Parse failed:', e);
-    } finally {
-      setPasteLoading(false);
+  // 商品点击：存储到 sessionStorage（为详情页准备）
+  const handleProductClick = (product: Product) => {
+    // 未登录，跳转到登录页
+    if (!user) {
+      router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
+      return;
     }
+    
+    // 已登录，存储商品数据到 sessionStorage，然后显示详情弹窗
+    try {
+      sessionStorage.setItem('currentProduct', JSON.stringify({
+        id: product.goodsId || product.id,
+        title: product.dtitle,
+        pic: product.pic,
+        price: product.actualPrice,
+        shop: product.shop,
+        // 可以存储更多字段
+        yuanjia: product.yuanjia,
+        couponInfo: product.couponInfo,
+        link: product.link
+      }));
+    } catch (e) {
+      console.warn('[Search] 存储到 sessionStorage 失败:', e);
+    }
+    
+    setSelectedProductId(product.goodsId || product.id);
   };
 
-  // 加入购物车
-  const addToCart = async (product: Product) => {
-    try {
-      const res = await fetch('/api/sourcing-items', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          product_id: product.goodsId || product.id,
-          title: product.dtitle,
-          image_url: product.pic,
-          price: String(product.actualPrice || product.yuanjia || 0),
-          shop_name: product.shop,
-          product_url: product.link || ''
-        })
-      });
-      if (res.ok) {
-        setCartCount(prev => prev + 1);
-      }
-    } catch (e) {
-      console.error('Add to cart failed:', e);
-    }
-  };
-
-  // 渲染商品卡片（使用正确的字段名）
+  // 渲染商品卡片（统一样式）
   const renderProductCard = (product: Product, isHorizontal: boolean = false) => (
-    <div key={product.goodsId || product.id} className={`bg-white rounded-xl overflow-hidden border border-gray-100 shadow-sm ${isHorizontal ? 'flex-shrink-0 w-36' : ''}`}>
+    <div 
+      key={product.goodsId || product.id} 
+      className={`bg-white rounded-xl overflow-hidden border border-gray-100 shadow-sm ${isHorizontal ? 'flex-shrink-0 w-36' : ''}`}
+      onClick={() => handleProductClick(product)}
+    >
       <div className="aspect-square relative">
-        <img src={product.pic?.replace('http://', 'https://')} alt={product.dtitle} className="w-full h-full object-cover" />
+        <img 
+          src={product.pic?.replace('http://', 'https://')} 
+          alt={product.dtitle} 
+          className="w-full h-full object-cover" 
+        />
         {product.couponInfo && (
           <div className="absolute top-1 left-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded">
-            {product.couponInfo}
+            -{product.couponInfo.replace(/[^0-9]/g, '')}元
           </div>
         )}
       </div>
@@ -313,18 +415,12 @@ export default function SearchSourceContent() {
             <span className="text-xs text-gray-400 line-through">¥{product.yuanjia}</span>
           )}
         </div>
-        <button
-          onClick={() => addToCart(product)}
-          className="w-full py-1.5 bg-orange-500 text-white text-sm rounded-lg hover:bg-orange-600 transition-colors"
-        >
-          {text.addToCart}
-        </button>
       </div>
     </div>
   );
 
   // 渲染横向滚动栏目（无标题）
-  const renderHorizontalSection = (title: string, items: Product[], isLoading: boolean) => (
+  const renderHorizontalSection = (items: Product[], isLoading: boolean, translationData: Product[]) => (
     <div className="mb-6">
       {isLoading ? (
         <div className="flex gap-2.5 overflow-x-auto scrollbar-hide pb-2">
@@ -338,9 +434,9 @@ export default function SearchSourceContent() {
             </div>
           ))}
         </div>
-      ) : items.length > 0 ? (
+      ) : translationData.length > 0 ? (
         <div className="flex gap-2.5 overflow-x-auto scrollbar-hide pb-2">
-          {items.map(product => renderProductCard(product, true))}
+          {translationData.map(product => renderProductCard(product, true))}
         </div>
       ) : (
         <div className="text-sm text-gray-400 py-4">{text.noData}</div>
@@ -348,9 +444,8 @@ export default function SearchSourceContent() {
     </div>
   );
 
-  // 渲染纵向网格栏目（无标题）
   // 渲染纵向网格栏目（支持无限滚动）
-  const renderVerticalSection = (title: string, items: Product[], isLoading: boolean, hasMore?: boolean, onLoadMore?: () => void, isLoadingMore?: boolean) => (
+  const renderVerticalSection = (title: string, items: Product[], isLoading: boolean, translationData: Product[], hasMore?: boolean, onLoadMore?: () => void, isLoadingMore?: boolean) => (
     <div className="mb-6">
       {isLoading ? (
         <div className="grid grid-cols-2 gap-2.5">
@@ -364,11 +459,11 @@ export default function SearchSourceContent() {
             </div>
           ))}
         </div>
-      ) : items.length > 0 ? (
+      ) : translationData.length > 0 ? (
         <>
           <div className="grid grid-cols-2 gap-2.5">
             {/* 单数时减掉最后一个，保证偶数 */}
-            {items.slice(0, items.length % 2 === 1 ? items.length - 1 : items.length).map(product => renderProductCard(product))}
+            {translationData.slice(0, translationData.length % 2 === 1 ? translationData.length - 1 : translationData.length).map(product => renderProductCard(product))}
           </div>
           {hasMore && (
             <div className="text-center py-4">
@@ -386,22 +481,21 @@ export default function SearchSourceContent() {
         <div className="text-sm text-gray-400 py-4">{text.noData}</div>
       )}
     </div>
-  );  return (
+  );
+
+  return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="sticky top-0 z-40 bg-white border-b shadow-sm">
         <div className="max-w-6xl mx-auto px-3 py-2.5 flex items-center gap-2">
-          {/* Logo */}
-          <span className="font-bold text-orange-500 text-lg">SourcePilot</span>
-
           {/* 搜索框 */}
           <div className="flex-1 mx-2 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              onChange={(e: any) => setQuery(e.target.value)}
+              onKeyDown={(e: any) => e.key === 'Enter' && handleSearch()}
               placeholder={text.searchPlaceholder}
               className="w-full pl-10 pr-4 py-2 bg-gray-100 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
             />
@@ -447,7 +541,7 @@ export default function SearchSourceContent() {
                 }`}
               >
                 {cat.cpic && <img src={cat.cpic} alt={cat.cname} className="w-8 h-8 rounded-lg" />}
-                <span className="text-xs whitespace-nowrap">{cat.cname}</span>
+                <span className="text-xs whitespace-nowrap">{cat.translations?.[lang] || cat.cname}</span>
               </button>
             ))}
           </div>
@@ -460,12 +554,12 @@ export default function SearchSourceContent() {
                   <button
                     key={sub.subcid}
                     onClick={() => {
-                      handleSearch(sub.subcname);
+                      handleSearch(sub.translations?.[lang] || sub.subcname);
                       setShowSubMenu(false);
                     }}
                     className="px-3 py-1 bg-gray-100 rounded-full text-sm hover:bg-orange-50 hover:text-orange-600 transition-colors"
                   >
-                    {sub.subcname}
+                    {sub.translations?.[lang] || sub.subcname}
                   </button>
                 ))}
               </div>
@@ -475,59 +569,35 @@ export default function SearchSourceContent() {
       )}
 
       <div className="max-w-6xl mx-auto px-3 py-4">
-        {/* 剪贴板识别 */}
-        <div className="mb-6 bg-orange-50 rounded-xl p-4">
-          <p className="text-sm text-gray-600 mb-2">{text.pasteHint}</p>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={pasteContent}
-              onChange={(e) => setPasteContent(e.target.value)}
-              placeholder="淘口令或链接..."
-              className="flex-1 px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-            />
-            <button
-              onClick={handlePaste}
-              disabled={pasteLoading}
-              className="px-4 py-2 bg-orange-500 text-white rounded-lg text-sm hover:bg-orange-600 disabled:opacity-50 transition-colors"
-            >
-              {pasteLoading ? text.loading : text.pasteButton}
-            </button>
-          </div>
-          {pasteResult && (
-            <div className="mt-3 p-3 bg-white rounded-lg text-sm">
-              {pasteResult.success ? (
-                <div>
-                  <p className="font-medium text-gray-800">{pasteResult.data?.itemName || '识别成功'}</p>
-                  <p className="text-gray-500 mt-1">价格: ¥{pasteResult.data?.actualPrice || 'N/A'}</p>
-                </div>
-              ) : (
-                <p className="text-red-500">识别失败: {pasteResult.raw?.msg || 'Unknown error'}</p>
-              )}
-            </div>
-          )}
-        </div>
-
         {/* 搜索结果（无标题） */}
-        {products.length > 0 && (
+        {productsWithTranslation.translatedItems.length > 0 && (
           <div className="mb-6">
             <div className="grid grid-cols-2 gap-2.5">
-              {products.map(product => renderProductCard(product))}
+              {productsWithTranslation.translatedItems.map(product => renderProductCard(product))}
             </div>
           </div>
         )}
 
-        {/* 4大栏目（调整顺序：实时热销榜 → 每日爆品 → 高佣精选 → 猜你喜欢） */}
-        {renderHorizontalSection(text.realTime, realTime, realTimeLoading)}
-        {renderVerticalSection(text.dailyHot, dailyHot, dailyHotLoading)}
-        {renderVerticalSection(text.highCommission, highCommission, highCommissionLoading)}
-        {renderVerticalSection(text.guessLike, guessLike, guessLikeLoading, guessLikeHasMore, loadMoreGuessLike, guessLikeLoadingMore)}
+        {/* 4大栏目（顺序：实时热销榜→每日爆品→高佣精选→猜你喜欢） */}
+        {renderHorizontalSection(realTime, realTimeLoading, realTimeWithTranslation.translatedItems)}
+        {renderVerticalSection(text.dailyHot, dailyHot, dailyHotLoading, dailyHotWithTranslation.translatedItems)}
+        {renderVerticalSection(text.highCommission, highCommission, highCommissionLoading, highCommissionWithTranslation.translatedItems)}
+        {renderVerticalSection(text.guessLike, guessLike, guessLikeLoading, guessLikeWithTranslation.translatedItems, guessLikeHasMore, loadMoreGuessLike, guessLikeLoadingMore)}
 
         {/* 加载指示器 */}
         {loading && (
           <div className="text-center py-8 text-sm text-gray-400">{text.loading}</div>
         )}
       </div>
+
+      {/* 产品详情弹窗 */}
+      {selectedProductId && (
+        <ProductModal 
+          productId={selectedProductId}
+          lang={lang}
+          onClose={() => setSelectedProductId(null)}
+        />
+      )}
     </div>
   );
 }
