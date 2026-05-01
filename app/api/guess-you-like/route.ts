@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { translateBatch } from '@/lib/aliyun-translate';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -9,7 +8,6 @@ const DATAOKE_PROXY_URL = process.env.DATAOKE_PROXY_URL || 'http://111.230.10.10
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const targetLang = searchParams.get('lang') || 'en';
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
     const seedId = searchParams.get('seed') || '46032636';
@@ -26,50 +24,18 @@ export async function GET(request: Request) {
 
     const data = await response.json();
     
-    if (!data.success || !data.data) {
-      return NextResponse.json({ success: false, products: [] });
-    }
-
-    // Map products
-    let products = (data.data || []).map((item: any) => ({
-      id: String(item.id || item.goodsId || Math.random().toString(36)),
-      title: item.dtitle || item.title || item.goodsName || 'Unknown',
-      originalTitle: item.dtitle || item.title,
-      price: parseFloat(item.actualPrice || item.zkFinalPrice || 0),
-      originalPrice: item.originalPrice ? parseFloat(item.originalPrice) : undefined,
-      image: item.mainPic || item.pic || '',
-      shop: item.shopName || item.nick || 'Taobao',
-      sales: item.monthSales || item.volume || '0',
-      monthSales: item.monthSales || item.volume || 0,
-      link: item.couponLink || item.itemLink || '',
-      coupon: item.couponInfo || item.couponAmount || '',
-      couponInfo: item.couponInfo || item.couponAmount || '',
-      shopType: item.shopType || 0,
-      desc: item.desc || '',
-      brandName: item.brandName || '',
-      couponLink: item.couponLink || ''
-    }));
-
-    // Translate titles if not Chinese
-    if (targetLang !== 'zh' && products.length > 0) {
-      const titles = products.map((p: { title: string }) => p.title);
-      const translated = await translateBatch(titles, 'zh', targetLang);
-      products = products.map((p: any, i: number) => ({
-        ...p,
-        originalTitle: p.title,
-        title: translated[i] || p.title
-      }));
-    }
-
+    // 后端只做搬运：返回大淘客API的原始全量数据，不翻译、不筛选字段
     return NextResponse.json({
       success: true,
-      products,
       page,
-      hasMore: products.length >= limit
+      limit,
+      // 直接返回原始数据，前端负责翻译和展示
+      data: data.data || [],
+      hasMore: (data.data || []).length >= limit
     });
 
   } catch (error) {
     console.error('[Guess You Like] Error:', error);
-    return NextResponse.json({ success: false, products: [] });
+    return NextResponse.json({ success: false, products: [], data: [] });
   }
 }
