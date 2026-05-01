@@ -159,58 +159,16 @@ export default function SearchSourceContent() {
   useEffect(() => {
     const loadCategories = async () => {
       try {
-        // 1. 先尝试加载本地翻译数据
-        const localRes = await fetch('/data/categories-translations.json');
-        const localData = await localRes.json();
-        const translationMap = new Map();
-        
-        if (localData.categories) {
-          localData.categories.forEach((cat: any) => {
-            translationMap.set(cat.cid, {
-              translations: cat.translations,
-              subcategories: cat.subcategories?.map((sub: any) => ({
-                subcid: sub.subcid,
-                subcname: sub.subcname,
-                translations: sub.translations
-              }))
-            });
-          });
+        const res = await fetch('/data/categories-translations.json');
+        const data = await res.json();
+        if (data.categories) {
+          setCategories(data.categories);
+        } else {
+          setCategories([]);
         }
-        
-        // 2. 从API获取完整分类（含图片）
-        const apiRes = await fetch('/api/proxy', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'super-categories' })
-        });
-        const apiData = await apiRes.json();
-        
-        let apiCategories = [];
-        if (apiData.success && Array.isArray(apiData.data)) {
-          apiCategories = apiData.data;
-        } else if (apiData.success && apiData.data?.categoryRespVOS) {
-          apiCategories = apiData.data.categoryRespVOS;
-        }
-        
-        // 3. 合并：API数据（含图片）+ 本地翻译
-        const mergedCategories = apiCategories.map((cat: any) => {
-          const translation = translationMap.get(cat.cid);
-          return {
-            ...cat,
-            translations: translation?.translations || null,
-            subcategories: cat.subcategories?.map((sub: any) => {
-              const subTranslation = translation?.subcategories?.find((s: any) => s.subcid === sub.subcid);
-              return {
-                ...sub,
-                translations: subTranslation?.translations || null
-              };
-            }) || null
-          };
-        });
-        
-        setCategories(mergedCategories);
-      } catch (err) {
-        console.error('[Categories] 加载失败:', err);
+      } catch (e) {
+        console.warn('[Categories] 加载失败:', e);
+        setCategories([]);
       }
     };
     

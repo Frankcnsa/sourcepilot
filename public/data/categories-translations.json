@@ -1,0 +1,58 @@
+{
+  "categories": [
+    {
+      "cid": 6,
+      "cname": "美食",
+      "translations": {
+        "en": "Food",
+        "es": "Comida",
+        "ru": "Еда",
+        "ar": "الطعام"
+      },
+      "subcategories": [
+        {
+          "subcid": 116908,
+          "subcname": "辣味零食",
+          "translations": {
+            "en": "Spicy Snacks",
+            "es": "Bocadillos picantes",
+            "ru": "Острые закуски",
+            "ar": "وجبات حارة"
+          }
+        },
+        {
+          "subcid": 90318,
+          "subcname": "快捷早餐",
+          "translations": {
+            "en": "Quick Breakfast",
+            "es": "Desayuno rápido",
+            "ru": "Быстрый завтрак",
+            "ar": "إفطار سريع"
+          }
+        }
+      ]
+    },
+    {
+      "cid": 4,
+      "cname": "居家日用",
+      "translations": {
+        "en": "Home & Daily Use",
+        "es": "Hogar y uso diario",
+        "ru": "Дом и повседневное испольэование",
+        "ar": "المنزل والاستخدام اليومي"
+      },
+      "subcategories": [
+        {
+          "subcid": 86341,
+          "subcname": "生活纸巾",
+          "translations": {
+            "en": "Tissue & Paper",
+            "es": "Papel higiénico",
+            "ru": "Бумажные изделия",
+            "ar": "مناديل وورق"
+          }
+        }
+      ]
+    }
+  ]
+}
