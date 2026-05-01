@@ -1,6 +1,5 @@
 import crypto from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
-import { translateBatch } from '@/lib/aliyun-translate';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,39 +14,15 @@ function generateSign(): { nonce: string; timer: string; signRan: string } {
   return { nonce, timer, signRan };
 }
 
-function mapProduct(item: any): any {
-  return {
-    id: String(item.id || item.goodsId || Math.random().toString(36)),
-    title: item.title || item.dtitle || 'Unknown',
-    originalTitle: item.dtitle || item.title || '',
-    price: parseFloat(item.actualPrice || item.price || 0),
-    originalPrice: item.originalPrice ? parseFloat(item.originalPrice) : undefined,
-    image: item.mainPic || item.pic || '',
-    shop: item.shopName || item.shop || 'Taobao Shop',
-    sales: String(item.monthSales || 0),
-    monthSales: item.monthSales || 0,
-    link: item.couponLink || item.itemLink || '',
-    couponInfo: item.couponInfo || '',
-    shopType: item.shopType || 0,
-    desc: item.desc || '',
-    brandName: item.brandName || '',
-    couponLink: item.couponLink || ''
-  };
-}
-
-// 9.9包邮精选 - 使用get-goods-list + 价格区间
+// 只做数据搬运，不翻译、不筛选字段
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const pageId = searchParams.get('pageId') || '1';
     const pageSize = searchParams.get('pageSize') || '20';
-    const targetLang = searchParams.get('lang') || 'zh';
-
-    console.log(`[9.9包邮] pageId=${pageId}, pageSize=${pageSize}`);
 
     const { nonce, timer, signRan } = generateSign();
     
-    // 使用get-goods-list，设置价格区间0-9.9元（单位：分）
     const url = new URL('https://openapi.dataoke.com/api/goods/get-goods-list');
     url.searchParams.set('appKey', APP_KEY);
     url.searchParams.set('version', 'v1.3.0');
@@ -66,24 +41,12 @@ export async function GET(request: NextRequest) {
       throw new Error(`Dataoke error: ${data.msg}`);
     }
 
-    let products = (data.data?.list || []).map(mapProduct);
-
-    // 翻译
-    if (targetLang !== 'zh' && products.length > 0) {
-      const titles = products.map((p: any) => p.title);
-      const translated = await translateBatch(titles, 'zh', targetLang);
-      products = products.map((p: any, i: number) => ({
-        ...p,
-        originalTitle: p.title,
-        title: translated[i] || p.title
-      }));
-    }
-
+    // 后端只做搬运：返回大淘客API的原始全量数据
     return NextResponse.json({
       success: true,
-      products,
-      total: data.data?.totalNum || products.length,
-      hasMore: products.length >= parseInt(pageSize)
+      products: data.data?.list || [],
+      total: data.data?.totalNum || 0,
+      hasMore: (data.data?.list || []).length >= parseInt(pageSize)
     });
 
   } catch (error) {

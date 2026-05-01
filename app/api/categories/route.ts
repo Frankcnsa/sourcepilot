@@ -1,16 +1,13 @@
 import { NextResponse } from 'next/server';
-import { translateBatch } from '@/lib/aliyun-translate';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 const DATAOKE_PROXY_URL = process.env.DATAOKE_PROXY_URL || 'http://111.230.10.101:3001';
 
+// 后端只做搬运，返回大淘客API的原始全量数据
 export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(request.url);
-    const targetLang = searchParams.get('lang') || 'en';
-
     const response = await fetch(`${DATAOKE_PROXY_URL}/`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -23,45 +20,10 @@ export async function GET(request: Request) {
 
     const data = await response.json();
     
-    if (!data.success || !data.data) {
-      return NextResponse.json({ success: false, categories: [] });
-    }
-
-    let categories = data.data || [];
-
-    // Translate category names if not Chinese
-    if (targetLang !== 'zh' && categories.length > 0) {
-      // Translate top-level category names
-      const names = categories.map((c: any) => c.cname);
-      const translated = await translateBatch(names, 'zh', targetLang);
-      // Translate subcategory names
-      const allSubNames: string[] = [];
-      const subIndices: { catIdx: number; subIdx: number }[] = [];
-      categories.forEach((cat: any, catIdx: number) => {
-        if (cat.subcategories) {
-          cat.subcategories.forEach((sub: any, subIdx: number) => {
-            allSubNames.push(sub.subcname);
-            subIndices.push({ catIdx, subIdx });
-          });
-        }
-      });
-      if (allSubNames.length > 0) {
-        const translatedSubs = await translateBatch(allSubNames, 'zh', targetLang);
-        translatedSubs.forEach((translatedSub: string, i: number) => {
-          const { catIdx, subIdx } = subIndices[i];
-          categories[catIdx].subcategories[subIdx].subcname = translatedSub || categories[catIdx].subcategories[subIdx].subcname;
-        });
-      }
-      // Apply top-level translations
-      categories = categories.map((c: any, i: number) => ({
-        ...c,
-        cname: translated[i] || c.cname
-      }));
-    }
-
+    // 后端只做搬运：返回大淘客API的原始全量数据，不翻译、不筛选字段
     return NextResponse.json({
       success: true,
-      categories
+      categories: data.data || data || []
     });
 
   } catch (error) {

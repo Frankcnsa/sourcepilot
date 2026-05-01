@@ -1,6 +1,5 @@
 import crypto from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
-import { translateBatch } from '@/lib/aliyun-translate';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,39 +14,15 @@ function generateSign(): { nonce: string; timer: string; signRan: string } {
   return { nonce, timer, signRan };
 }
 
-function mapProduct(item: any): any {
-  return {
-    id: String(item.id || item.goodsId || Math.random().toString(36)),
-    title: item.title || item.dtitle || 'Unknown',
-    originalTitle: item.dtitle || item.title || '',
-    price: parseFloat(item.actualPrice || item.price || 0),
-    originalPrice: item.originalPrice ? parseFloat(item.originalPrice) : undefined,
-    image: item.mainPic || item.pic || '',
-    shop: item.shopName || item.shop || 'Taobao Shop',
-    sales: String(item.monthSales || 0),
-    monthSales: item.monthSales || 0,
-    link: item.couponLink || item.itemLink || '',
-    couponInfo: item.couponInfo || '',
-    shopType: item.shopType || 0,
-    desc: item.desc || '',
-    brandName: item.brandName || '',
-    couponLink: item.couponLink || ''
-  };
-}
-
-// 实时热销榜（Top100）- 使用get-goods-list + 按2小时销量排序
+// 后端只做搬运，返回全量中文数据
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const pageId = searchParams.get('pageId') || '1';
-    const pageSize = searchParams.get('pageSize') || '100';
-    const targetLang = searchParams.get('lang') || 'zh';
+    const pageSize = searchParams.get('pageSize') || '20';
 
-    console.log(`[实时热销榜] pageId=${pageId}, pageSize=${pageSize}`);
-
-    const { nonce, timer, signRan } = generateSign();
+    const { nonce, timer, signRan } = generateSign(); 
     
-    // 使用get-goods-list，按2小时销量降序排序
     const url = new URL('https://openapi.dataoke.com/api/goods/get-goods-list');
     url.searchParams.set('appKey', APP_KEY);
     url.searchParams.set('version', 'v1.3.0');
@@ -56,7 +31,6 @@ export async function GET(request: NextRequest) {
     url.searchParams.set('signRan', signRan);
     url.searchParams.set('pageId', pageId);
     url.searchParams.set('pageSize', pageSize);
-    url.searchParams.set('sort', 'twoHoursSales_desc'); // 按2小时销量降序
 
     const response = await fetch(url.toString());
     const data = await response.json();
@@ -65,28 +39,16 @@ export async function GET(request: NextRequest) {
       throw new Error(`Dataoke error: ${data.msg}`);
     }
 
-    let products = (data.data?.list || []).map(mapProduct);
-
-    // 翻译
-    if (targetLang !== 'zh' && products.length > 0) {
-      const titles = products.map((p: any) => p.title);
-      const translated = await translateBatch(titles, 'zh', targetLang);
-      products = products.map((p: any, i: number) => ({
-        ...p,
-        originalTitle: p.title,
-        title: translated[i] || p.title
-      }));
-    }
-
+    // 后端只做搬运：返回大淘客API的原始全量数据
     return NextResponse.json({
       success: true,
-      products,
-      total: data.data?.totalNum || products.length,
-      hasMore: products.length >= parseInt(pageSize)
+      products: data.data?.list || [],
+      total: data.data?.totalNum || 0,
+      hasMore: (data.data?.list || []).length >= parseInt(pageSize)
     });
 
   } catch (error) {
-    console.error('[实时热销榜] Error:', error);
+    console.error('[热销榜] Error:', error);
     return NextResponse.json(
       { success: false, error: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
